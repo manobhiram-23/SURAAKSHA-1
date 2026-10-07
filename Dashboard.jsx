@@ -1,68 +1,227 @@
-'use client';
-
-import { useState, useCallback } from 'react';
-import { mockAlerts } from '@/lib/mockData';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Sidebar from '@/components/Sidebar';
 import AlertsList from '@/components/AlertsList';
 import AlertDetail from '@/components/AlertDetail';
 import styles from '@/components/Dashboard.module.css';
+import { 
+  Search, 
+  SlidersHorizontal, 
+  RotateCcw, 
+  Download, 
+  Plus, 
+  X, 
+  ShieldCheck, 
+  BarChart, 
+  Activity, 
+  AlertOctagon,
+  CheckCircle,
+  ExternalLink
+} from 'lucide-react';
 
 export default function Dashboard() {
-  const [alerts, setAlerts] = useState(mockAlerts);
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedAlertId, setSelectedAlertId] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [activeTab, setActiveTab] = useState('alerts'); // 'alerts' | 'reviews' | 'analytics' | 'settings'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [minSeverityFilter, setMinSeverityFilter] = useState('all');
   const [toast, setToast] = useState(null);
 
-  const filteredAlerts =
-    filterStatus === 'all'
-      ? alerts
-      : alerts.filter(a => a.status === filterStatus);
+  // Modal for flagging new account / threat
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newAccount, setNewAccount] = useState('');
+  const [newPlatform, setNewPlatform] = useState('Twitter / X');
+  const [newType, setNewType] = useState('Impersonation & Scam');
+  const [newSeverity, setNewSeverity] = useState(8);
+  const [newReason, setNewReason] = useState('');
+  const [newEvidenceContent, setNewEvidenceContent] = useState('');
+  const [newEvidenceLink, setNewEvidenceLink] = useState('');
+
+  // Fetch alerts from backend API
+  const fetchAlerts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/alerts');
+      if (res.ok) {
+        const data = await res.json();
+        setAlerts(data);
+        if (data.length > 0 && !selectedAlertId) {
+          setSelectedAlertId(data[0].id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch alerts:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedAlertId]);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
+
+  // Derived filtered alerts
+  const filteredAlerts = useMemo(() => {
+    return alerts.filter(alert => {
+      // Tab check
+      if (activeTab === 'reviews' && alert.status === 'open') {
+        return false;
+      }
+
+      // Status filter
+      if (filterStatus !== 'all' && alert.status !== filterStatus) {
+        return false;
+      }
+
+      // Severity filter
+      if (minSeverityFilter !== 'all') {
+        if (alert.severity < parseInt(minSeverityFilter)) {
+          return false;
+        }
+      }
+
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesAcc = alert.account?.toLowerCase().includes(q);
+        const matchesType = alert.type?.toLowerCase().includes(q);
+        const matchesPlatform = alert.platform?.toLowerCase().includes(q);
+        const matchesReason = alert.reason?.toLowerCase().includes(q);
+        const matchesContent = alert.evidence?.content?.toLowerCase().includes(q);
+        if (!matchesAcc && !matchesType && !matchesPlatform && !matchesReason && !matchesContent) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [alerts, activeTab, filterStatus, minSeverityFilter, searchQuery]);
+
+  // Ensure an alert is selected if available
+  useEffect(() => {
+    if (filteredAlerts.length > 0) {
+      const stillExists = filteredAlerts.some(a => a.id === selectedAlertId);
+      if (!stillExists) {
+        setSelectedAlertId(filteredAlerts[0].id);
+      }
+    } else {
+      setSelectedAlertId(null);
+    }
+  }, [filteredAlerts, selectedAlertId]);
 
   const selectedAlert = alerts.find(a => a.id === selectedAlertId);
 
-  const criticalCount = alerts.filter(
-    a => a.severity >= 8 && a.status === 'open'
-  ).length;
+  // Counts
+  const criticalCount = alerts.filter(a => a.severity >= 8 && a.status === 'open').length;
+  const reviewedCount = alerts.filter(a => a.status === 'reviewed' || a.status === 'escalated').length;
 
-  const handleUpdateDecision = useCallback(
-    decision => {
-      setAlerts(prev =>
-        prev.map(a =>
-          a.id === selectedAlertId ? { ...a, decision } : a
-        )
-      );
-    },
-    [selectedAlertId]
-  );
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  };
 
-  const handleUpdateNotes = useCallback(
-    notes => {
-      setAlerts(prev =>
-        prev.map(a =>
-          a.id === selectedAlertId ? { ...a, notes } : a
-        )
-      );
-    },
-    [selectedAlertId]
-  );
+  // Decision state updates
+  const handleUpdateDecision = useCallback((decision) => {
+    setAlerts(prev =>
+      prev.map(a => (a.id === selectedAlertId ? { ...a, decision } : a))
+    );
+  }, [selectedAlertId]);
 
-  const handleSubmit = useCallback(
-    alertId => {
-      setAlerts(prev =>
-        prev.map(a =>
-          a.id === alertId ? { ...a, status: 'reviewed' } : a
-        )
-      );
+  const handleUpdateNotes = useCallback((notes) => {
+    setAlerts(prev =>
+      prev.map(a => (a.id === selectedAlertId ? { ...a, notes } : a))
+    );
+  }, [selectedAlertId]);
+
+  // Submit report via API
+  const handleSubmit = useCallback(async (alertId) => {
+    const current = alerts.find(a => a.id === alertId);
+    if (!current) return;
+
+    try {
       setSubmitted(true);
-      setToast('Report submitted successfully. Case marked as reviewed.');
-      setTimeout(() => {
-        setSubmitted(false);
-        setToast(null);
-      }, 2000);
-    },
-    []
-  );
+      const res = await fetch(`/api/alerts/${alertId}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          decision: current.decision,
+          notes: current.notes,
+          officerId: 'Cyber-Officer #8820'
+        })
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        setAlerts(prev =>
+          prev.map(a => (a.id === alertId ? result.alert : a))
+        );
+        showToast(`Case #${alertId} verdict (${current.decision.toUpperCase()}) saved & filed.`);
+      } else {
+        showToast('Error recording verdict.');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Network error while lodging report.');
+    } finally {
+      setTimeout(() => setSubmitted(false), 1500);
+    }
+  }, [alerts]);
+
+  // Create new threat case via API
+  const handleCreateCase = async (e) => {
+    e.preventDefault();
+    if (!newAccount.trim()) return;
+
+    try {
+      const res = await fetch('/api/alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account: newAccount.startsWith('@') ? newAccount : `@${newAccount}`,
+          platform: newPlatform,
+          type: newType,
+          severity: newSeverity,
+          reason: newReason || 'Manually flagged suspicious account during SOC patrol.',
+          evidence: {
+            postLink: newEvidenceLink || 'https://threat-intel.internal/case',
+            content: newEvidenceContent || 'Direct impersonation or automated phishing behaviour detected.',
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+
+      if (res.ok) {
+        const created = await res.json();
+        setAlerts(prev => [created, ...prev]);
+        setSelectedAlertId(created.id);
+        setIsModalOpen(false);
+        // Reset form
+        setNewAccount('');
+        setNewReason('');
+        setNewEvidenceContent('');
+        setNewEvidenceLink('');
+        showToast(`New case for ${created.account} successfully flagged.`);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error creating new alert case.');
+    }
+  };
+
+  // Export alerts as JSON/CSV
+  const handleExportData = () => {
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(alerts, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('download', `suraaksha-threat-export-${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showToast('Exported alert registry as JSON.');
+  };
 
   return (
     <div className={styles.dashboard}>
@@ -70,38 +229,317 @@ export default function Dashboard() {
         criticalCount={criticalCount}
         filterStatus={filterStatus}
         onFilterChange={setFilterStatus}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onOpenNewCaseModal={() => setIsModalOpen(true)}
+        totalAlerts={alerts.length}
+        reviewedCount={reviewedCount}
       />
 
       <div className={styles.mainContent}>
-        <div className={styles.header}>
-          <div className={styles.headerTitle}>Threat Alerts</div>
-          <div className={styles.headerControls}>
-            <input
-              type="text"
-              className={styles.searchBox}
-              placeholder="Search accounts..."
-            />
-            <button className={styles.filterBtn}>Advanced</button>
+        {/* Top Control Header */}
+        <header className={styles.header}>
+          <div className={styles.headerLeft}>
+            <div className={styles.headerTitle}>
+              {activeTab === 'alerts' && 'Threat Intelligence Feed'}
+              {activeTab === 'reviews' && 'Reviewed Case Dossiers'}
+              {activeTab === 'analytics' && 'SOC Analytics & Threat Overview'}
+              {activeTab === 'settings' && 'SOC Configuration'}
+            </div>
+            <div className={styles.headerSub}>
+              SURAAKSHA Real-time Threat Triage & Enforcement Center
+            </div>
           </div>
-        </div>
 
-        <div className={styles.contentArea}>
-          <AlertsList
-            alerts={filteredAlerts}
-            selectedId={selectedAlertId}
-            onSelect={setSelectedAlertId}
-          />
-          <AlertDetail
-            alert={selectedAlert}
-            onUpdateDecision={handleUpdateDecision}
-            onUpdateNotes={handleUpdateNotes}
-            onSubmit={handleSubmit}
-            submitted={submitted}
-          />
-        </div>
+          <div className={styles.headerControls}>
+            <div className={styles.searchWrapper}>
+              <Search size={14} className={styles.searchIcon} />
+              <input
+                type="text"
+                className={styles.searchBox}
+                placeholder="Search handles, reasons, keywords..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button 
+                  className={styles.clearSearchBtn} 
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            <div className={styles.selectWrapper}>
+              <SlidersHorizontal size={13} className={styles.filterIcon} />
+              <select
+                className={styles.severitySelect}
+                value={minSeverityFilter}
+                onChange={(e) => setMinSeverityFilter(e.target.value)}
+              >
+                <option value="all">Severity: All</option>
+                <option value="9">Critical (9+)</option>
+                <option value="7">High (7+)</option>
+                <option value="5">Medium (5+)</option>
+              </select>
+            </div>
+
+            <button 
+              className={styles.iconBtn} 
+              onClick={handleExportData} 
+              title="Export Threat Records"
+            >
+              <Download size={14} />
+              <span>Export</span>
+            </button>
+
+            <button 
+              className={styles.primaryActionBtn}
+              onClick={() => setIsModalOpen(true)}
+            >
+              <Plus size={14} />
+              <span>Flag Account</span>
+            </button>
+          </div>
+        </header>
+
+        {/* View Switcher based on Active Tab */}
+        {activeTab === 'alerts' || activeTab === 'reviews' ? (
+          <div className={styles.contentArea}>
+            <AlertsList
+              alerts={filteredAlerts}
+              selectedId={selectedAlertId}
+              onSelect={setSelectedAlertId}
+            />
+            <AlertDetail
+              alert={selectedAlert}
+              onUpdateDecision={handleUpdateDecision}
+              onUpdateNotes={handleUpdateNotes}
+              onSubmit={handleSubmit}
+              submitted={submitted}
+            />
+          </div>
+        ) : activeTab === 'analytics' ? (
+          <div className={styles.analyticsPane}>
+            <div className={styles.analyticsGrid}>
+              <div className={styles.analyticCard}>
+                <div className={styles.analyticCardTitle}>
+                  <AlertOctagon size={16} className={styles.iconRed} />
+                  <span>Critical Escalations</span>
+                </div>
+                <div className={styles.analyticValue}>{criticalCount}</div>
+                <div className={styles.analyticSub}>High threat score &gt;= 8 requiring prompt LEA contact</div>
+              </div>
+
+              <div className={styles.analyticCard}>
+                <div className={styles.analyticCardTitle}>
+                  <CheckCircle size={16} className={styles.iconGreen} />
+                  <span>Total Reviewed Cases</span>
+                </div>
+                <div className={styles.analyticValue}>{reviewedCount}</div>
+                <div className={styles.analyticSub}>Closed or dispositioned by SOC cybersecurity officers</div>
+              </div>
+
+              <div className={styles.analyticCard}>
+                <div className={styles.analyticCardTitle}>
+                  <Activity size={16} className={styles.iconBlue} />
+                  <span>Threat Ingestion Rate</span>
+                </div>
+                <div className={styles.analyticValue}>+24 / hr</div>
+                <div className={styles.analyticSub}>Active social crawler streams ingested</div>
+              </div>
+
+              <div className={styles.analyticCard}>
+                <div className={styles.analyticCardTitle}>
+                  <ShieldCheck size={16} className={styles.iconCyan} />
+                  <span>False Positive Ratio</span>
+                </div>
+                <div className={styles.analyticValue}>4.2%</div>
+                <div className={styles.analyticSub}>Dismissal frequency across AI heuristics</div>
+              </div>
+            </div>
+
+            <div className={styles.analyticsSection}>
+              <h3>Threat Distribution Breakdown</h3>
+              <div className={styles.threatBars}>
+                {['Impersonation & Scam', 'Phishing Impersonation', 'Malware Distribution', 'Coordinated Harassment', 'Credential Harvesting'].map((type, i) => {
+                  const count = alerts.filter(a => a.type.toLowerCase().includes(type.toLowerCase().substring(0, 8))).length;
+                  const pct = alerts.length ? Math.round((count / alerts.length) * 100) : 20;
+                  return (
+                    <div key={type} className={styles.threatBarRow}>
+                      <span className={styles.threatBarLabel}>{type}</span>
+                      <div className={styles.barTrack}>
+                        <div className={styles.barFill} style={{ width: `${Math.max(pct, 12)}%` }}></div>
+                      </div>
+                      <span className={styles.threatBarVal}>{count} cases</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.settingsPane}>
+            <div className={styles.settingsCard}>
+              <h3>SOC Patrol & Crawler Configuration</h3>
+              <p>Configure automated threat scrapers, notification channels, and webhook endpoints.</p>
+
+              <div className={styles.settingGroup}>
+                <label>Telegram / Discord SOC Webhook</label>
+                <input type="text" defaultValue="https://internal-soc.suraaksha.gov/webhooks/alerts" className={styles.settingInput} />
+              </div>
+
+              <div className={styles.settingGroup}>
+                <label>Default Officer Identifier</label>
+                <input type="text" defaultValue="Officer #8820 (Cyber Surveillance Wing)" className={styles.settingInput} />
+              </div>
+
+              <div className={styles.settingGroup}>
+                <label>Auto-Escalate Critical Threats (Severity &gt;= 9)</label>
+                <select className={styles.settingInput} defaultValue="enabled">
+                  <option value="enabled">Enabled (Notify LEA Dispatch automatically)</option>
+                  <option value="disabled">Disabled (Manual verification required)</option>
+                </select>
+              </div>
+
+              <button className={styles.saveSettingsBtn} onClick={() => showToast('Configuration saved successfully.')}>
+                Save Configuration
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {toast && <div className={styles.toast}>{toast}</div>}
+      {/* Flag New Account Modal */}
+      {isModalOpen && (
+        <div className={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitle}>
+                <AlertOctagon size={18} className={styles.modalIcon} />
+                <span>Flag New Suspicious Account</span>
+              </div>
+              <button className={styles.closeBtn} onClick={() => setIsModalOpen(false)}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCase} className={styles.modalForm}>
+              <div className={styles.formRow}>
+                <label className={styles.formLabel}>Account Handle / Identifier *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="@threat_user_handle"
+                  className={styles.formInput}
+                  value={newAccount}
+                  onChange={(e) => setNewAccount(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.formGrid2}>
+                <div>
+                  <label className={styles.formLabel}>Platform</label>
+                  <select 
+                    className={styles.formInput} 
+                    value={newPlatform} 
+                    onChange={(e) => setNewPlatform(e.target.value)}
+                  >
+                    <option value="Twitter / X">Twitter / X</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="Telegram / Discord">Telegram / Discord</option>
+                    <option value="Facebook">Facebook</option>
+                    <option value="YouTube">YouTube</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className={styles.formLabel}>Threat Category</label>
+                  <select 
+                    className={styles.formInput} 
+                    value={newType} 
+                    onChange={(e) => setNewType(e.target.value)}
+                  >
+                    <option value="Impersonation & Scam">Impersonation & Scam</option>
+                    <option value="Phishing Impersonation">Phishing Impersonation</option>
+                    <option value="Malware Distribution">Malware Distribution</option>
+                    <option value="Credential Harvesting">Credential Harvesting</option>
+                    <option value="Coordinated Harassment">Coordinated Harassment</option>
+                    <option value="Misinformation Campaign">Misinformation Campaign</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.formRow}>
+                <label className={styles.formLabel}>Severity Score (1 to 10): <strong>{newSeverity}</strong></label>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  className={styles.formRange}
+                  value={newSeverity}
+                  onChange={(e) => setNewSeverity(parseInt(e.target.value))}
+                />
+              </div>
+
+              <div className={styles.formRow}>
+                <label className={styles.formLabel}>Flagging Reason / Threat Vector</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Impersonating central banking support with fraudulent domain"
+                  className={styles.formInput}
+                  value={newReason}
+                  onChange={(e) => setNewReason(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.formRow}>
+                <label className={styles.formLabel}>Post URL / Evidence Link</label>
+                <input
+                  type="text"
+                  placeholder="https://x.com/handle/status/..."
+                  className={styles.formInput}
+                  value={newEvidenceLink}
+                  onChange={(e) => setNewEvidenceLink(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.formRow}>
+                <label className={styles.formLabel}>Extracted Post Payload / Evidence Text</label>
+                <textarea
+                  rows="3"
+                  placeholder="Paste suspected tweet/post text here..."
+                  className={styles.formTextarea}
+                  value={newEvidenceContent}
+                  onChange={(e) => setNewEvidenceContent(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.modalActions}>
+                <button 
+                  type="button" 
+                  className={styles.cancelBtn} 
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className={styles.submitCaseBtn}>
+                  Log Case to Threat Database
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toast && (
+        <div className={styles.toast}>
+          <CheckCircle size={16} className={styles.toastIcon} />
+          <span>{toast}</span>
+        </div>
+      )}
     </div>
   );
 }

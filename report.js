@@ -1,6 +1,4 @@
-import { mockAlerts } from '@/lib/mockData';
-
-let alertsStore = [...mockAlerts];
+import { getAlerts, updateAlert } from '@/lib/mockData';
 
 export default function handler(req, res) {
   if (req.method !== 'POST') {
@@ -9,7 +7,8 @@ export default function handler(req, res) {
 
   const { id } = req.query;
   const alertId = parseInt(id);
-  const alert = alertsStore.find(a => a.id === alertId);
+  const alerts = getAlerts();
+  const alert = alerts.find(a => a.id === alertId);
 
   if (!alert) {
     return res.status(404).json({ message: 'Alert not found' });
@@ -21,24 +20,17 @@ export default function handler(req, res) {
     return res.status(400).json({ message: 'Decision is required' });
   }
 
-  alertsStore = alertsStore.map(a =>
-    a.id === alertId
-      ? {
-          ...a,
-          decision,
-          notes: notes || a.notes,
-          status: 'reviewed',
-          reviewedAt: new Date().toISOString(),
-          reviewedBy: officerId || 'unknown',
-        }
-      : a
-  );
-
-  const updated = alertsStore.find(a => a.id === alertId);
+  const updated = updateAlert(alertId, {
+    decision,
+    notes: notes !== undefined ? notes : alert.notes,
+    status: decision === 'dismiss' ? 'reviewed' : decision === 'escalate' ? 'escalated' : 'reviewed',
+    reviewedAt: new Date().toISOString(),
+    reviewedBy: officerId || 'Senior Cyber Officer #4492'
+  });
 
   return res.status(200).json({
     success: true,
     message: 'Report submitted successfully',
-    alert: updated,
+    alert: updated
   });
 }

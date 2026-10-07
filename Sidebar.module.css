@@ -1,53 +1,103 @@
 .sidebar {
-  width: 240px;
+  width: 260px;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border);
-  padding: 24px 16px;
+  padding: 20px 14px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.topBrand {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.logoBadge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logoIcon {
+  color: var(--accent);
 }
 
 .logo {
   font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: var(--accent);
-  margin-bottom: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #fff;
+  line-height: 1.2;
 }
 
 .logoSub {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-secondary);
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  margin-bottom: 24px;
 }
 
-.navSection {
+.liveIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10b981;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  width: fit-content;
+}
+
+.livePulse {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+.navBlock {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .navLabel {
-  font-size: 11px;
-  color: var(--text-secondary);
-  letter-spacing: 0.3px;
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  margin-bottom: 8px;
-  font-weight: 600;
+  margin-bottom: 6px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
 }
 
 .navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 10px 12px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 13px;
+  font-weight: 500;
   color: var(--text-secondary);
-  transition: all 0.15s;
+  background: transparent;
   border: 1px solid transparent;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s ease;
 }
 
 .navItem:hover {
@@ -56,29 +106,113 @@
 }
 
 .navItem.active {
-  background: var(--bg-tertiary);
+  background: rgba(56, 189, 248, 0.12);
   color: var(--accent);
-  border-color: var(--accent);
+  border-color: rgba(56, 189, 248, 0.3);
 }
 
-.navStat {
+.countBadge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 2px 6px;
+  border-radius: 9999px;
+}
+
+.filterItem {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s ease;
 }
 
-.navStatLabel {
+.filterItem:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.filterItem.filterActive {
+  background: var(--bg-tertiary);
+  color: #fff;
+  border-color: var(--border);
+  font-weight: 600;
+}
+
+.actionBlock {
+  margin-top: -6px;
+}
+
+.newAlertBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border: 1px solid #3b82f6;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease;
+}
+
+.newAlertBtn:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  transform: translateY(-1px);
+}
+
+.criticalCard {
+  margin-top: auto;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.criticalCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--severity-critical);
+  letter-spacing: 0.5px;
+}
+
+.criticalPulse {
+  width: 6px;
+  height: 6px;
+  background: var(--severity-critical);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--severity-critical);
+}
+
+.criticalCount {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--severity-critical);
+}
+
+.criticalHint {
   font-size: 11px;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.navStatValue {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--severity-high);
+  line-height: 1.4;
 }

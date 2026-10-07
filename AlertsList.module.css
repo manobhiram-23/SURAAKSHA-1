@@ -4,51 +4,123 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  background: var(--bg-primary);
+  flex-shrink: 0;
 }
 
 .alertItem {
   padding: 16px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
   border-left: 3px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .alertItem:hover {
-  background: var(--bg-tertiary);
+  background: rgba(31, 41, 55, 0.4);
 }
 
 .alertItem.selected {
-  background: var(--bg-tertiary);
+  background: rgba(31, 41, 55, 0.7);
   border-left-color: var(--accent);
 }
 
 .alertHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
+  align-items: center;
 }
 
 .alertAccount {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 14px;
+  color: #fff;
+  letter-spacing: 0.2px;
+}
+
+.subMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.platformBadge {
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
 }
 
 .alertType {
   font-size: 12px;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .alertPreview {
   font-size: 12px;
   color: var(--text-secondary);
-  line-height: 1.4;
-  margin-bottom: 8px;
+  line-height: 1.45;
+  font-style: italic;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px;
+  border-radius: 4px;
+  border-left: 2px solid var(--border);
+}
+
+.alertFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
 }
 
 .alertTime {
-  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.reportedBadge {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.emptyContainer {
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  text-align: center;
   color: var(--text-secondary);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.emptyIcon {
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.emptyTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.emptyDesc {
+  font-size: 12px;
+  color: var(--text-muted);
+  max-width: 240px;
 }
