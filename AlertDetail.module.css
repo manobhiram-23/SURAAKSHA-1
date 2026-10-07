@@ -1,0 +1,237 @@
+.detailPane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  overflow-y: auto;
+}
+
+.detailEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.detailHeader {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 24px 32px;
+}
+
+.detailTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.detailAccountName {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.detailScore {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--severity-high);
+}
+
+.detailScoreLabel {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.detailMeta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  font-size: 13px;
+}
+
+.detailMetaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detailMetaLabel {
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.detailMetaValue {
+  color: var(--text-primary);
+}
+
+.detailContent {
+  padding: 32px;
+  flex: 1;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.evidenceItem {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.evidenceLabel {
+  color: var(--text-secondary);
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.evidenceContent {
+  color: var(--text-primary);
+  word-break: break-word;
+  font-family: "Monaco", "Courier New", monospace;
+  font-size: 12px;
+}
+
+.evidenceLink {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.evidenceLink:hover {
+  color: var(--accent-hover);
+}
+
+.locationText {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.reasonBox {
+  background: var(--bg-secondary);
+  border-left: 3px solid var(--severity-high);
+  border-radius: 3px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.reasonTitle {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.reasonText {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.actionSection {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 16px;
+  margin-bottom: 32px;
+}
+
+.actionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.decisionOptions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.decisionBtn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.decisionBtn:hover {
+  background: var(--border);
+}
+
+.decisionBtn.selected {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.notesTextarea {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 8px;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 12px;
+  resize: vertical;
+  min-height: 60px;
+  margin-bottom: 12px;
+}
+
+.notesTextarea::placeholder {
+  color: var(--text-secondary);
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.submitBtn:disabled {
+  background: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
