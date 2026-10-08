@@ -197,7 +197,7 @@
   border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 60px 48px;
   position: relative;
   overflow-y: auto;

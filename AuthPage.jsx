@@ -324,7 +324,7 @@ export default function AuthPage({ onAuthSuccess }) {
           <div className={styles.formSubtitle}>
             {activeTab === 'signin'
               ? 'Authenticate to access the SURAAKSHA SOC platform'
-              : 'Create your account and choose the credentials you will use to sign in'}
+              : 'Enter your details, accept the policy, then continue to create your account'}
           </div>
         </div>
 
@@ -390,7 +390,10 @@ export default function AuthPage({ onAuthSuccess }) {
                   className={`${styles.formInput} ${fieldErrors.signInPassword ? styles.inputError : ''}`}
                   placeholder="Enter your password"
                   value={signInPassword}
-                  onChange={e => setSignInPassword(e.target.value)}
+                  onChange={e => {
+                    setSignInPassword(e.target.value);
+                    if (success) setSuccess('');
+                  }}
                   autoComplete="current-password"
                 />
                 <button
@@ -619,7 +622,7 @@ export default function AuthPage({ onAuthSuccess }) {
               {loading ? (
                 <><div className={styles.spinner} /><span>Creating Account...</span></>
               ) : (
-                <><User size={15} /><span>Create Account</span></>
+                <><User size={15} /><span>Continue</span></>
               )}
             </button>
           </form>
