@@ -92,6 +92,8 @@ npm run start
 | PATCH | `/api/alerts/:id` | Update decision / notes / status |
 | POST | `/api/alerts/:id/report` | Submit officer report |
 
+Alert cases, officer notes, and report decisions are also saved in the current browser's local storage, so they remain after sign-out, refreshes, and closing the tab. They are not shared with other browsers or devices and will be removed if this browser's site data is cleared.
+
 ## Sign-in and account creation
 
 Create an account with your own email and password, then sign in with those credentials. Demo access is also available:

@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import styles from '@/AuthPage.module.css';
 import {
+  supabase,
+  isSupabaseConfigured,
+  supabaseSignIn,
+  supabaseSignUp,
+  supabaseResetPassword,
+} from '@/supabase';
+import {
   ShieldAlert,
   Mail,
   Lock,
@@ -198,6 +205,26 @@ export default function AuthPage({ onAuthSuccess }) {
     setLoading(true);
     try {
       const normalizedEmail = signInEmail.trim().toLowerCase();
+
+      // If Supabase is configured, try Supabase sign in first
+      if (isSupabaseConfigured) {
+        const { data: supaData, error: supaErr } = await supabaseSignIn(normalizedEmail, signInPassword);
+        if (supaData?.user && !supaErr) {
+          const u = supaData.user;
+          const authenticatedUser = {
+            name: u.user_metadata?.name || u.email.split('@')[0],
+            email: u.email,
+            role: u.user_metadata?.role || 'officer',
+            badge: u.user_metadata?.badge || 'SOC-' + u.id.slice(0, 4).toUpperCase(),
+          };
+          setSuccess(`Welcome back, ${authenticatedUser.name}! (Authenticated via Supabase)`);
+          setTimeout(() => {
+            if (onAuthSuccess) onAuthSuccess(authenticatedUser);
+          }, 500);
+          return;
+        }
+      }
+
       const demoUser = DEMO_USERS.find(
         user => user.email === normalizedEmail && user.password === signInPassword
       );
@@ -256,6 +283,32 @@ export default function AuthPage({ onAuthSuccess }) {
     try {
       const normalizedEmail = signUpEmail.trim().toLowerCase();
       const normalizedBadge = signUpBadge.trim().toLowerCase();
+
+      // If Supabase is configured, register with Supabase Auth
+      if (isSupabaseConfigured) {
+        const { data: supaData, error: supaErr } = await supabaseSignUp(
+          normalizedEmail,
+          signUpPassword,
+          {
+            name: signUpName.trim(),
+            badge: signUpBadge.trim(),
+            role: signUpRole,
+            phone: signUpPhone.trim() || undefined,
+          }
+        );
+        if (supaErr) {
+          setError(supaErr.message || 'Supabase registration failed. Please try again.');
+          return;
+        }
+        if (supaData?.user) {
+          setSignInEmail(normalizedEmail);
+          setSignInPassword('');
+          setActiveTab('signin');
+          setSuccess('Account created in Supabase! If email confirmation is enabled, check your inbox.');
+          return;
+        }
+      }
+
       const accounts = loadRegisteredAccounts();
       const emailExists = accounts.some(account => account.email.toLowerCase() === normalizedEmail) ||
         DEMO_USERS.some(user => user.email === normalizedEmail);
@@ -800,9 +853,15 @@ export default function AuthPage({ onAuthSuccess }) {
 
         {/* Security badges */}
         <div className={styles.securityBadges}>
-          <div className={styles.secBadge}><LockIcon size={11} /> PBKDF2 Password Hash</div>
-          <div className={styles.secBadge}><Shield size={11} /> Browser-only Account</div>
-          <div className={styles.secBadge}><Activity size={11} /> Tab Session</div>
+          <div className={styles.secBadge}>
+            <LockIcon size={11} />
+            {isSupabaseConfigured ? 'Supabase Auth Active' : 'PBKDF2 Password Hash'}
+          </div>
+          <div className={styles.secBadge}>
+            <Shield size={11} />
+            {isSupabaseConfigured ? 'PostgreSQL Cloud DB' : 'Local / Demo Mode'}
+          </div>
+          <div className={styles.secBadge}><Activity size={11} /> Active Session</div>
         </div>
       </div>
     </div>

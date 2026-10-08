@@ -18,9 +18,43 @@ import {
   ExternalLink
 } from 'lucide-react';
 
+const SAVED_ALERTS_KEY = 'suraaksha.savedAlerts';
+
+function loadSavedAlerts() {
+  const savedAlerts = window.localStorage.getItem(SAVED_ALERTS_KEY);
+  if (!savedAlerts) return [];
+
+  const parsedAlerts = JSON.parse(savedAlerts);
+  if (
+    !Array.isArray(parsedAlerts) ||
+    parsedAlerts.some(alert =>
+      !alert ||
+      (typeof alert.id !== 'string' && typeof alert.id !== 'number') ||
+      typeof alert.account !== 'string' ||
+      typeof alert.status !== 'string'
+    )
+  ) {
+    throw new Error('Saved case data is invalid.');
+  }
+
+  return parsedAlerts;
+}
+
+function mergeSavedAlerts(serverAlerts, savedAlerts) {
+  const savedById = new Map(savedAlerts.map(alert => [alert.id, alert]));
+  const serverIds = new Set(serverAlerts.map(alert => alert.id));
+  const savedOnly = savedAlerts.filter(alert => !serverIds.has(alert.id));
+
+  return [
+    ...savedOnly,
+    ...serverAlerts.map(alert => savedById.get(alert.id) || alert),
+  ];
+}
+
 export default function Dashboard({ currentUser, onSignOut }) {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [alertsLoaded, setAlertsLoaded] = useState(false);
   const [selectedAlertId, setSelectedAlertId] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
@@ -39,27 +73,66 @@ export default function Dashboard({ currentUser, onSignOut }) {
   const [newEvidenceContent, setNewEvidenceContent] = useState('');
   const [newEvidenceLink, setNewEvidenceLink] = useState('');
 
-  // Fetch alerts from backend API
+  const showToast = useCallback((message) => {
+    setToast(message);
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  }, []);
+
+  // Merge API data with browser-persisted cases and reports.
   const fetchAlerts = useCallback(async () => {
+    let savedAlerts = [];
+    try {
+      savedAlerts = loadSavedAlerts();
+    } catch (storageError) {
+      console.error('Failed to load saved cases:', storageError);
+      showToast('Saved cases could not be loaded from this browser.');
+    }
+
     try {
       const res = await fetch('/api/alerts');
-      if (res.ok) {
-        const data = await res.json();
-        setAlerts(data);
-        if (data.length > 0 && !selectedAlertId) {
-          setSelectedAlertId(data[0].id);
-        }
+      if (!res.ok) {
+        throw new Error(`Alert request failed with status ${res.status}.`);
       }
-    } catch (err) {
-      console.error('Failed to fetch alerts:', err);
+
+      const serverAlerts = await res.json();
+      if (!Array.isArray(serverAlerts)) {
+        throw new Error('Alert service returned invalid case data.');
+      }
+      const mergedAlerts = mergeSavedAlerts(serverAlerts, savedAlerts);
+      setAlerts(mergedAlerts);
+      if (mergedAlerts.length > 0 && !selectedAlertId) {
+        setSelectedAlertId(mergedAlerts[0].id);
+      }
+    } catch (fetchError) {
+      console.error('Failed to fetch alerts:', fetchError);
+      setAlerts(savedAlerts);
+      if (savedAlerts.length > 0) {
+        showToast('Showing cases saved in this browser; the alert service is unavailable.');
+      } else {
+        showToast('Unable to load cases from the alert service.');
+      }
     } finally {
+      setAlertsLoaded(true);
       setLoading(false);
     }
-  }, [selectedAlertId]);
+  }, [selectedAlertId, showToast]);
 
   useEffect(() => {
     fetchAlerts();
   }, [fetchAlerts]);
+
+  useEffect(() => {
+    if (!alertsLoaded) return;
+
+    try {
+      window.localStorage.setItem(SAVED_ALERTS_KEY, JSON.stringify(alerts));
+    } catch (storageError) {
+      console.error('Failed to save cases in this browser:', storageError);
+      showToast('Unable to save cases in this browser. Check available storage.');
+    }
+  }, [alerts, alertsLoaded, showToast]);
 
   // Derived filtered alerts
   const filteredAlerts = useMemo(() => {
@@ -122,13 +195,6 @@ export default function Dashboard({ currentUser, onSignOut }) {
   const criticalCount = alerts.filter(a => a.severity >= 8 && a.status === 'open').length;
   const reviewedCount = alerts.filter(a => a.status !== 'open').length;
 
-  const showToast = (message) => {
-    setToast(message);
-    setTimeout(() => {
-      setToast(null);
-    }, 3000);
-  };
-
   // Decision state updates
   const handleUpdateDecision = useCallback((decision) => {
     setAlerts(prev =>
@@ -149,13 +215,17 @@ export default function Dashboard({ currentUser, onSignOut }) {
 
     try {
       setSubmitted(true);
+      const officerIdentifier = currentUser
+        ? `${currentUser.name} (${currentUser.badge || currentUser.role})`
+        : 'Cyber-Officer #8820';
+
       const res = await fetch(`/api/alerts/${alertId}/report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           decision: current.decision,
           notes: current.notes,
-          officerId: 'Cyber-Officer #8820'
+          officerId: officerIdentifier
         })
       });
 

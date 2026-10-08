@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import '@/styles/globals.css';
 import AuthPage from '@/AuthPage';
+import { supabase, supabaseSignOut } from '@/supabase';
 
 const AUTH_SESSION_KEY = 'suraaksha.authenticatedUser';
 
@@ -17,7 +18,14 @@ export default function App({ Component, pageProps }) {
     }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    if (supabase) {
+      try {
+        await supabaseSignOut();
+      } catch (err) {
+        console.error('Supabase sign-out error:', err);
+      }
+    }
     setCurrentUser(null);
     try {
       window.sessionStorage.removeItem(AUTH_SESSION_KEY);
