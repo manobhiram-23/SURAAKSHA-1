@@ -90,6 +90,7 @@ export default function AuthPage({ onAuthSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPasswordHelp, setShowPasswordHelp] = useState(false);
 
   // Sign In state
   const [signInEmail, setSignInEmail] = useState('');
@@ -116,6 +117,7 @@ export default function AuthPage({ onAuthSuccess }) {
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
+    setShowPasswordHelp(false);
     clearState();
   };
 
@@ -407,6 +409,20 @@ export default function AuthPage({ onAuthSuccess }) {
               </div>
               {fieldErrors.signInPassword && (
                 <div className={styles.fieldError}><AlertCircle size={11} />{fieldErrors.signInPassword}</div>
+              )}
+              <button
+                type="button"
+                className={styles.forgotPasswordBtn}
+                aria-expanded={showPasswordHelp}
+                onClick={() => setShowPasswordHelp(value => !value)}
+              >
+                Forgot password?
+              </button>
+              {showPasswordHelp && (
+                <div className={styles.passwordHelp} role="status">
+                  Password recovery isn’t configured. Accounts are stored in this browser, and passwords cannot
+                  be recovered from their secure hashes. Contact your administrator for help.
+                </div>
               )}
             </div>
 

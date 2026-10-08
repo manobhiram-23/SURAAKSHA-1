@@ -103,10 +103,6 @@ Create an account with your own email and password, then sign in with those cred
 
 New accounts are stored in that browser's local storage with PBKDF2 password hashes, and the signed-in session lasts for the current browser tab session. Accounts are not shared across browsers or devices and are not backed by a server or database. This client-side authentication is not suitable for production; use a server-side identity provider and persistent account store before deploying for real users.
 
-## Alert log persistence
-
-Created alert cases, officer notes, decisions, and submitted review statuses are saved in the current browser's local storage and restored after refresh. These logs are browser-specific and are not shared across devices or backed by the server.
-
 ### Example: Submit a report
 
 ```bash
