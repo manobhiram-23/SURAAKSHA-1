@@ -18,8 +18,11 @@ import {
   ExternalLink
 } from 'lucide-react';
 
+const ALERTS_STORAGE_KEY = 'suraaksha.alerts';
+
 export default function Dashboard({ currentUser, onSignOut }) {
   const [alerts, setAlerts] = useState([]);
+  const [alertsReady, setAlertsReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedAlertId, setSelectedAlertId] = useState(null);
   const [submitted, setSubmitted] = useState(false);
@@ -39,27 +42,70 @@ export default function Dashboard({ currentUser, onSignOut }) {
   const [newEvidenceContent, setNewEvidenceContent] = useState('');
   const [newEvidenceLink, setNewEvidenceLink] = useState('');
 
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  };
+
   // Fetch alerts from backend API
   const fetchAlerts = useCallback(async () => {
+    let serverAlerts = [];
     try {
       const res = await fetch('/api/alerts');
-      if (res.ok) {
-        const data = await res.json();
-        setAlerts(data);
-        if (data.length > 0 && !selectedAlertId) {
-          setSelectedAlertId(data[0].id);
-        }
+      if (!res.ok) {
+        throw new Error(`Alert request failed with status ${res.status}.`);
       }
-    } catch (err) {
-      console.error('Failed to fetch alerts:', err);
-    } finally {
-      setLoading(false);
+      serverAlerts = await res.json();
+    } catch (error) {
+      console.error('Failed to fetch alerts:', error);
     }
-  }, [selectedAlertId]);
+
+    let savedAlerts = [];
+    try {
+      const storedAlerts = window.localStorage.getItem(ALERTS_STORAGE_KEY);
+      if (storedAlerts) {
+        const parsedAlerts = JSON.parse(storedAlerts);
+        if (!Array.isArray(parsedAlerts) || parsedAlerts.some(alert => !alert || alert.id === undefined)) {
+          throw new Error('Saved alert data is invalid.');
+        }
+        savedAlerts = parsedAlerts;
+      }
+    } catch (error) {
+      console.error('Failed to restore saved alerts:', error);
+      showToast('Saved case logs could not be loaded from this browser.');
+    }
+
+    const savedIds = new Set(savedAlerts.map(alert => alert.id));
+    const combinedAlerts = [
+      ...savedAlerts,
+      ...serverAlerts.filter(alert => !savedIds.has(alert.id)),
+    ];
+    setAlerts(combinedAlerts);
+    setSelectedAlertId(current => current ?? combinedAlerts[0]?.id ?? null);
+    setAlertsReady(true);
+
+    if (serverAlerts.length === 0 && savedAlerts.length === 0) {
+      showToast('No saved case logs were found.');
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     fetchAlerts();
   }, [fetchAlerts]);
+
+  useEffect(() => {
+    if (!alertsReady) return;
+
+    try {
+      window.localStorage.setItem(ALERTS_STORAGE_KEY, JSON.stringify(alerts));
+    } catch (error) {
+      console.error('Failed to save alert logs:', error);
+      showToast('Unable to save case logs in this browser.');
+    }
+  }, [alerts, alertsReady]);
 
   // Derived filtered alerts
   const filteredAlerts = useMemo(() => {
@@ -122,13 +168,6 @@ export default function Dashboard({ currentUser, onSignOut }) {
   const criticalCount = alerts.filter(a => a.severity >= 8 && a.status === 'open').length;
   const reviewedCount = alerts.filter(a => a.status !== 'open').length;
 
-  const showToast = (message) => {
-    setToast(message);
-    setTimeout(() => {
-      setToast(null);
-    }, 3000);
-  };
-
   // Decision state updates
   const handleUpdateDecision = useCallback((decision) => {
     setAlerts(prev =>
@@ -142,39 +181,33 @@ export default function Dashboard({ currentUser, onSignOut }) {
     );
   }, [selectedAlertId]);
 
-  // Submit report via API
-  const handleSubmit = useCallback(async (alertId) => {
+  // Submit report and save the review result with the browser's alert log.
+  const handleSubmit = useCallback((alertId) => {
     const current = alerts.find(a => a.id === alertId);
     if (!current) return;
 
-    try {
-      setSubmitted(true);
-      const res = await fetch(`/api/alerts/${alertId}/report`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          decision: current.decision,
-          notes: current.notes,
-          officerId: 'Cyber-Officer #8820'
-        })
-      });
+    const statusMap = {
+      confirm: 'reviewed',
+      dismiss: 'reviewed',
+      escalate: 'escalated',
+      investigate: 'investigating'
+    };
 
-      if (res.ok) {
-        const result = await res.json();
-        setAlerts(prev =>
-          prev.map(a => (a.id === alertId ? result.alert : a))
-        );
-        showToast(`Case #${alertId} verdict (${current.decision.toUpperCase()}) saved & filed.`);
-      } else {
-        showToast('Error recording verdict.');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('Network error while lodging report.');
-    } finally {
-      setTimeout(() => setSubmitted(false), 1500);
-    }
-  }, [alerts]);
+    setSubmitted(true);
+    setAlerts(prev =>
+      prev.map(alert => alert.id === alertId
+        ? {
+            ...alert,
+            status: statusMap[current.decision] || 'reviewed',
+            reviewedAt: new Date().toISOString(),
+            reviewedBy: currentUser?.name || 'SOC Officer'
+          }
+        : alert
+      )
+    );
+    showToast(`Case #${alertId} verdict (${(current.decision || 'reviewed').toUpperCase()}) saved & filed.`);
+    setTimeout(() => setSubmitted(false), 1500);
+  }, [alerts, currentUser]);
 
   // Create new threat case via API
   const handleCreateCase = async (e) => {
@@ -210,9 +243,11 @@ export default function Dashboard({ currentUser, onSignOut }) {
         setNewEvidenceContent('');
         setNewEvidenceLink('');
         showToast(`New case for ${created.account} successfully flagged.`);
+      } else {
+        throw new Error(`Case creation failed with status ${res.status}.`);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error creating new alert case:', err);
       showToast('Error creating new alert case.');
     }
   };
