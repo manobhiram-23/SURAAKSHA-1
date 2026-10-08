@@ -61,16 +61,16 @@ yarn install
 pnpm install
 ```
 
-### 2. Configure Supabase
+### 2. Configure Supabase Auth
 
-Add your Supabase project URL and anon or publishable key to `.env.local`:
+Create a Supabase project, then add its project URL and publishable key (or legacy anon key) to `.env.local`:
 
-```bash
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-or-publishable-key
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
-Run [`supabase-users.sql`](./supabase-users.sql) in the Supabase SQL Editor to create the `officers` profile table, add a trigger for new Auth accounts, and backfill profiles for users who registered before the trigger was installed. This migration is safe to rerun and does not reinsert the sample alerts from [`schema.sql`](./schema.sql). In the Supabase dashboard, Auth accounts are listed under **Authentication → Users**; officer profile records are under **Table Editor → officers**. Configure Supabase email/SMTP settings if email confirmation is enabled. When Supabase is configured, failed or rate-limited sign-ups are reported as errors; the app will not create a local-only account as a fallback.
+Restart the Next.js server after changing environment variables. New accounts are created by Supabase Auth and appear under **Authentication → Users** in the Supabase dashboard. Enable the Email provider and configure the project's email confirmation and allowed redirect URLs as needed. Never put a Supabase service-role key in a `NEXT_PUBLIC_` variable.
 
 ### 3. Run the development server
 
@@ -107,7 +107,7 @@ Create an account with your own email and password, then sign in with those cred
 | SOC Officer | `officer@suraaksha.gov` | `SOC@2024` |
 | Admin | `admin@suraaksha.gov` | `Admin@2024` |
 
-When Supabase is configured, new accounts are created with Supabase Auth and their officer profiles are created in `public.officers` by the database trigger in [`schema.sql`](./schema.sql). If Supabase is not configured, the app uses browser-local demo accounts instead. Local accounts are not shared across browsers or devices. Built-in demo sign-ins are for demonstration only; configure a server-side identity provider and production-grade account policies before deploying for real users.
+New accounts are registered with Supabase Auth; registration errors are shown instead of silently creating a browser-only account. If email confirmation is enabled, confirm the message from Supabase before signing in. The built-in demo credentials are for demonstration only.
 
 ### Example: Submit a report
 

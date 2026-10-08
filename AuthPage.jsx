@@ -232,14 +232,10 @@ export default function AuthPage({ onAuthSuccess }) {
         user => user.email === normalizedEmail && user.password === signInPassword
       );
 
+      let authenticatedUser = null;
       if (demoUser) {
         const { password, ...user } = demoUser;
-        setSuccess(`Welcome back, ${user.name}! Redirecting to SOC dashboard...`);
-        setTimeout(() => {
-          if (onAuthSuccess) onAuthSuccess(user);
-        }, 500);
-      } else if (isSupabaseConfigured) {
-        setError(supaAuthFailureReason || 'Invalid email or password. Check your credentials and try again.');
+        authenticatedUser = user;
       } else {
         const account = loadRegisteredAccounts().find(
           registeredAccount => registeredAccount.email.toLowerCase() === normalizedEmail
@@ -249,10 +245,18 @@ export default function AuthPage({ onAuthSuccess }) {
           await hashPassword(signInPassword, fromBase64(account.passwordSalt)) === account.passwordHash
         ) {
           const { passwordHash, passwordSalt, ...user } = account;
-          setSuccess(`Welcome back, ${user.name}! Redirecting to SOC dashboard...`);
-          setTimeout(() => {
-            if (onAuthSuccess) onAuthSuccess(user);
-          }, 500);
+          authenticatedUser = user;
+        }
+      }
+
+      if (authenticatedUser) {
+        setSuccess(`Welcome back, ${authenticatedUser.name}! Redirecting to SOC dashboard...`);
+        setTimeout(() => {
+          if (onAuthSuccess) onAuthSuccess(authenticatedUser);
+        }, 500);
+      } else {
+        if (supaAuthFailureReason && !supaAuthFailureReason.toLowerCase().includes('invalid login credentials')) {
+          setError(supaAuthFailureReason);
         } else {
           setError('Invalid email or password. Check your credentials and try again.');
         }
@@ -285,89 +289,44 @@ export default function AuthPage({ onAuthSuccess }) {
     setLoading(true);
     try {
       const normalizedEmail = signUpEmail.trim().toLowerCase();
-      const normalizedBadge = signUpBadge.trim().toLowerCase();
-
-      if (isSupabaseConfigured) {
-        const { data: supaData, error: supaErr } = await supabaseSignUp(
-          normalizedEmail,
-          signUpPassword,
-          {
-            name: signUpName.trim(),
-            badge: signUpBadge.trim(),
-            role: signUpRole,
-            phone: signUpPhone.trim() || undefined,
-          }
-        );
-
-        if (supaErr) {
-          if (supaErr.status === 429 || supaErr.message?.toLowerCase().includes('rate limit')) {
-            setError('Supabase email sign-up is rate-limited. Please wait before trying again or configure SMTP in Supabase. No local account was created.');
-          } else {
-            setError(supaErr.message || 'Supabase registration failed. No local account was created.');
-          }
-          return;
-        }
-
-        if (!supaData?.user) {
-          setError('Supabase did not return a new account. No local account was created.');
-          return;
-        }
-
-        if (supaData.user.identities?.length === 0) {
-          setError('This email may already be registered. Sign in or use password recovery.');
-          return;
-        }
-
-        setSignInEmail(normalizedEmail);
-        setSignInPassword('');
-        setActiveTab('signin');
-        if (!supaData.session && !supaData.user.confirmed_at && !supaData.user.email_confirmed_at) {
-          setSuccess('Account created in Supabase. Check your email to confirm the account before signing in.');
-        } else {
-          setSuccess('Account created successfully in Supabase. You can now sign in.');
-        }
+      if (!isSupabaseConfigured || !supabase) {
+        setError('Supabase is not configured. Add your project URL and publishable key to .env.local, then restart the app.');
         return;
       }
 
-      const accounts = loadRegisteredAccounts();
-      const emailExists = accounts.some(account => account.email.toLowerCase() === normalizedEmail) ||
-        DEMO_USERS.some(user => user.email === normalizedEmail);
-      const badgeExists = accounts.some(account => account.badge.toLowerCase() === normalizedBadge) ||
-        DEMO_USERS.some(user => user.badge.toLowerCase() === normalizedBadge);
-
-      if (emailExists) {
-        setError('An account with this email already exists. Sign in or use a different email.');
-        return;
-      }
-      if (badgeExists) {
-        setError('An account with this badge / ID already exists. Use a different badge / ID.');
-        return;
-      }
-
-      const salt = window.crypto.getRandomValues(new Uint8Array(16));
-      const passwordHash = await hashPassword(signUpPassword, salt);
-      const user = {
-        name: signUpName.trim(),
-        email: normalizedEmail,
-        role: signUpRole,
-        badge: signUpBadge.trim(),
-      };
-
-      window.localStorage.setItem(
-        REGISTERED_ACCOUNTS_KEY,
-        JSON.stringify([
-          ...accounts,
-          {
-            ...user,
-            passwordSalt: toBase64(salt),
-            passwordHash,
-          }
-        ])
+      const { data: supaData, error: supaErr } = await supabaseSignUp(
+        normalizedEmail,
+        signUpPassword,
+        {
+          name: signUpName.trim(),
+          badge: signUpBadge.trim(),
+          role: signUpRole,
+          phone: signUpPhone.trim() || undefined,
+        }
       );
-      setSignInEmail(user.email);
+
+      if (supaErr) {
+        console.error('Supabase account registration failed:', supaErr);
+        setError(supaErr.message || 'Supabase registration failed. Please try again.');
+        return;
+      }
+
+      if (!supaData?.user) {
+        throw new Error('Supabase did not return a created user. Please try again.');
+      }
+      if (Array.isArray(supaData.user.identities) && supaData.user.identities.length === 0) {
+        setError('An account with this email may already exist. Sign in or use password recovery.');
+        return;
+      }
+
+      setSignInEmail(normalizedEmail);
       setSignInPassword('');
       setActiveTab('signin');
-      setSuccess('Account created successfully. Sign in with your new email and password.');
+      if (!supaData.session) {
+        setSuccess('Account created in Supabase. Check your email to confirm the account before signing in.');
+      } else {
+        setSuccess('Account created successfully in Supabase. You can now sign in.');
+      }
     } catch (registrationError) {
       console.error('Account creation failed:', registrationError);
       setError(registrationError.message || 'Unable to create your account. Please try again.');
