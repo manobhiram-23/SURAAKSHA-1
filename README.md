@@ -94,7 +94,14 @@ npm run start
 
 ## Sign-in and account creation
 
-Create an account with your own email and password, then sign in with those credentials. New accounts are stored in that browser's local storage with PBKDF2 password hashes, and the signed-in session lasts for the current browser tab session. Accounts are not shared across browsers or devices and are not backed by a server or database. This client-side authentication is not suitable for production; use a server-side identity provider and persistent account store before deploying for real users.
+Create an account with your own email and password, then sign in with those credentials. Demo access is also available:
+
+| Role | Email | Password |
+|------|-------|----------|
+| SOC Officer | `officer@suraaksha.gov` | `SOC@2024` |
+| Admin | `admin@suraaksha.gov` | `Admin@2024` |
+
+New accounts are stored in that browser's local storage with PBKDF2 password hashes, and the signed-in session lasts for the current browser tab session. Accounts are not shared across browsers or devices and are not backed by a server or database. This client-side authentication is not suitable for production; use a server-side identity provider and persistent account store before deploying for real users.
 
 ### Example: Submit a report
 

@@ -18,6 +18,11 @@ import {
   Lock as LockIcon
 } from 'lucide-react';
 
+const DEMO_USERS = [
+  { email: 'officer@suraaksha.gov', password: 'SOC@2024', name: 'Officer Arjun Kumar', role: 'officer', badge: 'SOC-4492' },
+  { email: 'admin@suraaksha.gov', password: 'Admin@2024', name: 'Director Priya Shah', role: 'admin', badge: 'ADM-0001' },
+];
+
 const REGISTERED_ACCOUNTS_KEY = 'suraaksha.registeredAccounts';
 const PASSWORD_HASH_ITERATIONS = 310000;
 
@@ -114,6 +119,12 @@ export default function AuthPage({ onAuthSuccess }) {
     clearState();
   };
 
+  const fillDemoCredentials = (demoUser) => {
+    setSignInEmail(demoUser.email);
+    setSignInPassword(demoUser.password);
+    clearState();
+  };
+
   /* ─── Sign In ─── */
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -126,17 +137,25 @@ export default function AuthPage({ onAuthSuccess }) {
     setLoading(true);
     try {
       const normalizedEmail = signInEmail.trim().toLowerCase();
-      const account = loadRegisteredAccounts().find(
-        registeredAccount => registeredAccount.email.toLowerCase() === normalizedEmail
+      const demoUser = DEMO_USERS.find(
+        user => user.email === normalizedEmail && user.password === signInPassword
       );
 
       let authenticatedUser = null;
-      if (
-        account &&
-        await hashPassword(signInPassword, fromBase64(account.passwordSalt)) === account.passwordHash
-      ) {
-        const { passwordHash, passwordSalt, ...user } = account;
+      if (demoUser) {
+        const { password, ...user } = demoUser;
         authenticatedUser = user;
+      } else {
+        const account = loadRegisteredAccounts().find(
+          registeredAccount => registeredAccount.email.toLowerCase() === normalizedEmail
+        );
+        if (
+          account &&
+          await hashPassword(signInPassword, fromBase64(account.passwordSalt)) === account.passwordHash
+        ) {
+          const { passwordHash, passwordSalt, ...user } = account;
+          authenticatedUser = user;
+        }
       }
 
       if (authenticatedUser) {
@@ -177,8 +196,10 @@ export default function AuthPage({ onAuthSuccess }) {
       const normalizedEmail = signUpEmail.trim().toLowerCase();
       const normalizedBadge = signUpBadge.trim().toLowerCase();
       const accounts = loadRegisteredAccounts();
-      const emailExists = accounts.some(account => account.email.toLowerCase() === normalizedEmail);
-      const badgeExists = accounts.some(account => account.badge.toLowerCase() === normalizedBadge);
+      const emailExists = accounts.some(account => account.email.toLowerCase() === normalizedEmail) ||
+        DEMO_USERS.some(user => user.email === normalizedEmail);
+      const badgeExists = accounts.some(account => account.badge.toLowerCase() === normalizedBadge) ||
+        DEMO_USERS.some(user => user.badge.toLowerCase() === normalizedBadge);
 
       if (emailExists) {
         setError('An account with this email already exists. Sign in or use a different email.');
@@ -394,6 +415,30 @@ export default function AuthPage({ onAuthSuccess }) {
               )}
             </button>
 
+            <div className={styles.demoCredentials}>
+              <div className={styles.demoTitle}>Demo credentials</div>
+              {DEMO_USERS.map(demoUser => (
+                <div className={styles.demoAccount} key={demoUser.email}>
+                  <div className={styles.demoDetails}>
+                    <div className={styles.demoRow}>
+                      <span className={styles.demoLabel}>Email</span>
+                      <span className={styles.demoValue}>{demoUser.email}</span>
+                    </div>
+                    <div className={styles.demoRow}>
+                      <span className={styles.demoLabel}>Password</span>
+                      <span className={styles.demoValue}>{demoUser.password}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.demoFillBtn}
+                    onClick={() => fillDemoCredentials(demoUser)}
+                  >
+                    Use
+                  </button>
+                </div>
+              ))}
+            </div>
           </form>
         )}
 
