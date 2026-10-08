@@ -206,6 +206,7 @@ export default function AuthPage({ onAuthSuccess }) {
     try {
       const normalizedEmail = signInEmail.trim().toLowerCase();
 
+      let supaAuthFailureReason = null;
       // If Supabase is configured, try Supabase sign in first
       if (isSupabaseConfigured) {
         const { data: supaData, error: supaErr } = await supabaseSignIn(normalizedEmail, signInPassword);
@@ -222,6 +223,8 @@ export default function AuthPage({ onAuthSuccess }) {
             if (onAuthSuccess) onAuthSuccess(authenticatedUser);
           }, 500);
           return;
+        } else if (supaErr) {
+          supaAuthFailureReason = supaErr.message;
         }
       }
 
@@ -252,7 +255,11 @@ export default function AuthPage({ onAuthSuccess }) {
           if (onAuthSuccess) onAuthSuccess(authenticatedUser);
         }, 500);
       } else {
-        setError('Invalid email or password. Check your credentials and try again.');
+        if (supaAuthFailureReason && !supaAuthFailureReason.toLowerCase().includes('invalid login credentials')) {
+          setError(supaAuthFailureReason);
+        } else {
+          setError('Invalid email or password. Check your credentials and try again.');
+        }
       }
     } catch (authError) {
       console.error('Sign-in failed:', authError);
@@ -296,16 +303,28 @@ export default function AuthPage({ onAuthSuccess }) {
             phone: signUpPhone.trim() || undefined,
           }
         );
+
         if (supaErr) {
-          setError(supaErr.message || 'Supabase registration failed. Please try again.');
-          return;
-        }
-        if (supaData?.user) {
-          setSignInEmail(normalizedEmail);
-          setSignInPassword('');
-          setActiveTab('signin');
-          setSuccess('Account created in Supabase! If email confirmation is enabled, check your inbox.');
-          return;
+          // If rate limited by Supabase Auth email service, save locally so the user can continue
+          if (supaErr.status === 429 || supaErr.message?.toLowerCase().includes('rate limit')) {
+            console.warn('Supabase Auth rate limited, registering user locally:', supaErr.message);
+          } else {
+            setError(supaErr.message || 'Supabase registration failed. Please try again.');
+            return;
+          }
+        } else if (supaData?.user) {
+          // If user was created in Supabase but needs email confirmation
+          if (!supaData.session && !supaData.user.confirmed_at) {
+            setSignInEmail(normalizedEmail);
+            setSignInPassword('');
+            setActiveTab('signin');
+            setSuccess('Account created in Supabase! If "Confirm email" is enabled in Supabase, check your inbox or sign in.');
+          } else {
+            setSignInEmail(normalizedEmail);
+            setSignInPassword('');
+            setActiveTab('signin');
+            setSuccess('Account created successfully in Supabase! You can now sign in.');
+          }
         }
       }
 
