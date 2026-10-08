@@ -60,7 +60,7 @@ function fromBase64(value) {
 
 async function hashPassword(password, salt) {
   if (!window.crypto.subtle) {
-    throw new Error('Secure account creation requires HTTPS or localhost.');
+    throw new Error('Secure account creation and sign-in require HTTPS or localhost.');
   }
 
   const key = await window.crypto.subtle.importKey(
@@ -602,8 +602,8 @@ export default function AuthPage({ onAuthSuccess }) {
                 onChange={e => setSignUpAgreed(e.target.checked)}
               />
               <label htmlFor="agree" className={styles.agreementText}>
-                I agree to the <a href="#">SURAAKSHA Official Use Policy</a> and acknowledge that all activity on this
-                platform is logged and subject to audit under the Information Technology Act, 2000.
+                I agree to the <a href="#">SURAAKSHA demo use policy</a> and understand that this demo stores accounts
+                in this browser only and is not a production authentication service.
               </label>
             </div>
             {fieldErrors.signUpAgreed && (
@@ -614,7 +614,7 @@ export default function AuthPage({ onAuthSuccess }) {
 
             <button type="submit" className={styles.submitBtn} disabled={loading || !!success}>
               {loading ? (
-                <><div className={styles.spinner} /><span>Submitting Request...</span></>
+                <><div className={styles.spinner} /><span>Creating Account...</span></>
               ) : (
                 <><User size={15} /><span>Create Account</span></>
               )}
@@ -625,11 +625,11 @@ export default function AuthPage({ onAuthSuccess }) {
         {/* Switch tab footer */}
         <div className={styles.formFooter}>
           {activeTab === 'signin' ? (
-            <>Don't have access?{' '}
-              <button onClick={() => handleTabSwitch('signup')}>Request an Account →</button>
+            <>New to SURAAKSHA?{' '}
+              <button onClick={() => handleTabSwitch('signup')}>Create an Account →</button>
             </>
           ) : (
-            <>Already have access?{' '}
+            <>Already have an account?{' '}
               <button onClick={() => handleTabSwitch('signin')}>Sign In →</button>
             </>
           )}
@@ -637,9 +637,9 @@ export default function AuthPage({ onAuthSuccess }) {
 
         {/* Security badges */}
         <div className={styles.securityBadges}>
-          <div className={styles.secBadge}><LockIcon size={11} /> AES-256 Encrypted</div>
-          <div className={styles.secBadge}><Shield size={11} /> MHA Certified</div>
-          <div className={styles.secBadge}><Activity size={11} /> Audit Logged</div>
+          <div className={styles.secBadge}><LockIcon size={11} /> PBKDF2 Password Hash</div>
+          <div className={styles.secBadge}><Shield size={11} /> Browser-only Account</div>
+          <div className={styles.secBadge}><Activity size={11} /> Tab Session</div>
         </div>
       </div>
     </div>
