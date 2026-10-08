@@ -407,6 +407,14 @@
 
 .agreementText a { color: var(--accent); }
 
+.signupContinue {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding: 10px 0;
+  background: rgba(11, 15, 23, 0.98);
+}
+
 /* Submit Button */
 .submitBtn {
   width: 100%;

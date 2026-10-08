@@ -618,13 +618,15 @@ export default function AuthPage({ onAuthSuccess }) {
               </div>
             )}
 
-            <button type="submit" className={styles.submitBtn} disabled={loading || !!success}>
-              {loading ? (
-                <><div className={styles.spinner} /><span>Creating Account...</span></>
-              ) : (
-                <><User size={15} /><span>Continue</span></>
-              )}
-            </button>
+            <div className={styles.signupContinue}>
+              <button type="submit" className={styles.submitBtn} disabled={loading || !!success}>
+                {loading ? (
+                  <><div className={styles.spinner} /><span>Creating Account...</span></>
+                ) : (
+                  <><User size={15} /><span>Continue</span></>
+                )}
+              </button>
+            </div>
           </form>
         )}
 
