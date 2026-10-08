@@ -25,6 +25,7 @@ const DEMO_USERS = [
 
 const REGISTERED_ACCOUNTS_KEY = 'suraaksha.registeredAccounts';
 const PASSWORD_HASH_ITERATIONS = 310000;
+const DEMO_PASSWORD_RESET_OTP = '123456';
 
 function loadRegisteredAccounts() {
   const storedAccounts = window.localStorage.getItem(REGISTERED_ACCOUNTS_KEY);
@@ -95,6 +96,10 @@ export default function AuthPage({ onAuthSuccess }) {
   // Sign In state
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryOtp, setRecoveryOtp] = useState('');
+  const [recoveryPassword, setRecoveryPassword] = useState('');
+  const [recoveryConfirm, setRecoveryConfirm] = useState('');
 
   // Sign Up state
   const [signUpName, setSignUpName] = useState('');
@@ -119,6 +124,60 @@ export default function AuthPage({ onAuthSuccess }) {
     setActiveTab(tab);
     setShowPasswordHelp(false);
     clearState();
+  };
+
+  const handlePasswordReset = async () => {
+    clearState();
+    const errs = {};
+    const normalizedEmail = recoveryEmail.trim().toLowerCase();
+    if (!normalizedEmail) errs.recoveryEmail = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(normalizedEmail)) errs.recoveryEmail = 'Enter a valid email address';
+    if (!recoveryOtp.trim()) errs.recoveryOtp = 'Enter the OTP';
+    else if (recoveryOtp.trim() !== DEMO_PASSWORD_RESET_OTP) errs.recoveryOtp = 'Incorrect OTP';
+    if (!recoveryPassword) errs.recoveryPassword = 'New password is required';
+    else if (recoveryPassword.length < 8) errs.recoveryPassword = 'Password must be at least 8 characters';
+    if (!recoveryConfirm) errs.recoveryConfirm = 'Confirm your new password';
+    else if (recoveryConfirm !== recoveryPassword) errs.recoveryConfirm = 'Passwords do not match';
+
+    if (Object.keys(errs).length) {
+      setFieldErrors(errs);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const accounts = loadRegisteredAccounts();
+      const accountIndex = accounts.findIndex(
+        account => account.email.toLowerCase() === normalizedEmail
+      );
+      if (accountIndex === -1) {
+        setError('No browser account found for this email. Demo accounts cannot be reset here.');
+        return;
+      }
+
+      const salt = window.crypto.getRandomValues(new Uint8Array(16));
+      const passwordHash = await hashPassword(recoveryPassword, salt);
+      const updatedAccounts = [...accounts];
+      updatedAccounts[accountIndex] = {
+        ...updatedAccounts[accountIndex],
+        passwordSalt: toBase64(salt),
+        passwordHash,
+      };
+      window.localStorage.setItem(REGISTERED_ACCOUNTS_KEY, JSON.stringify(updatedAccounts));
+
+      setSignInEmail(normalizedEmail);
+      setSignInPassword('');
+      setShowPasswordHelp(false);
+      setRecoveryOtp('');
+      setRecoveryPassword('');
+      setRecoveryConfirm('');
+      setSuccess('Password reset successfully. Sign in with your new password.');
+    } catch (resetError) {
+      console.error('Password reset failed:', resetError);
+      setError(resetError.message || 'Unable to reset your password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fillDemoCredentials = (demoUser) => {
@@ -414,14 +473,94 @@ export default function AuthPage({ onAuthSuccess }) {
                 type="button"
                 className={styles.forgotPasswordBtn}
                 aria-expanded={showPasswordHelp}
-                onClick={() => setShowPasswordHelp(value => !value)}
+                onClick={() => {
+                  const open = !showPasswordHelp;
+                  setShowPasswordHelp(open);
+                  setRecoveryEmail(signInEmail);
+                  setRecoveryOtp('');
+                  setRecoveryPassword('');
+                  setRecoveryConfirm('');
+                  clearState();
+                }}
               >
                 Forgot password?
               </button>
               {showPasswordHelp && (
-                <div className={styles.passwordHelp} role="status">
-                  Password recovery isn’t configured. Accounts are stored in this browser, and passwords cannot
-                  be recovered from their secure hashes. Contact your administrator for help.
+                <div className={styles.passwordRecovery}>
+                  <div className={styles.passwordHelp} role="status">
+                    Demo OTP: <strong>{DEMO_PASSWORD_RESET_OTP}</strong>. Enter it below to reset a registered
+                    account in this browser. This fixed OTP is for demo use only and is not secure for production.
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel} htmlFor="recovery-email">Account Email</label>
+                    <input
+                      id="recovery-email"
+                      type="email"
+                      className={`${styles.formInput} ${fieldErrors.recoveryEmail ? styles.inputError : ''}`}
+                      placeholder="you@organisation.gov"
+                      value={recoveryEmail}
+                      onChange={event => setRecoveryEmail(event.target.value)}
+                      autoComplete="email"
+                    />
+                    {fieldErrors.recoveryEmail && (
+                      <div className={styles.fieldError}><AlertCircle size={11} />{fieldErrors.recoveryEmail}</div>
+                    )}
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel} htmlFor="recovery-otp">Enter OTP</label>
+                    <input
+                      id="recovery-otp"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      className={`${styles.formInput} ${fieldErrors.recoveryOtp ? styles.inputError : ''}`}
+                      placeholder="6-digit OTP"
+                      value={recoveryOtp}
+                      onChange={event => setRecoveryOtp(event.target.value.replace(/\D/g, ''))}
+                    />
+                    {fieldErrors.recoveryOtp && (
+                      <div className={styles.fieldError}><AlertCircle size={11} />{fieldErrors.recoveryOtp}</div>
+                    )}
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel} htmlFor="recovery-password">New Password</label>
+                    <input
+                      id="recovery-password"
+                      type="password"
+                      className={`${styles.formInput} ${fieldErrors.recoveryPassword ? styles.inputError : ''}`}
+                      placeholder="At least 8 characters"
+                      value={recoveryPassword}
+                      onChange={event => setRecoveryPassword(event.target.value)}
+                      autoComplete="new-password"
+                    />
+                    {fieldErrors.recoveryPassword && (
+                      <div className={styles.fieldError}><AlertCircle size={11} />{fieldErrors.recoveryPassword}</div>
+                    )}
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel} htmlFor="recovery-confirm">Confirm New Password</label>
+                    <input
+                      id="recovery-confirm"
+                      type="password"
+                      className={`${styles.formInput} ${fieldErrors.recoveryConfirm ? styles.inputError : ''}`}
+                      placeholder="Repeat new password"
+                      value={recoveryConfirm}
+                      onChange={event => setRecoveryConfirm(event.target.value)}
+                      autoComplete="new-password"
+                    />
+                    {fieldErrors.recoveryConfirm && (
+                      <div className={styles.fieldError}><AlertCircle size={11} />{fieldErrors.recoveryConfirm}</div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.submitBtn}
+                    onClick={handlePasswordReset}
+                    disabled={loading}
+                  >
+                    {loading ? 'Resetting Password...' : 'Reset Password'}
+                  </button>
                 </div>
               )}
             </div>

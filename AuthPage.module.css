@@ -358,6 +358,14 @@
   line-height: 1.5;
 }
 
+.passwordRecovery .formInput {
+  padding: 11px 14px;
+}
+
+.passwordRecovery .submitBtn {
+  margin-top: 4px;
+}
+
 /* Row layout for two columns */
 .formRow {
   display: grid;
