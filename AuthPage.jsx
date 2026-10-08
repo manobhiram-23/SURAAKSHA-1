@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useRouter } from 'next/router';
 import styles from '@/AuthPage.module.css';
 import {
   ShieldAlert,
@@ -24,6 +23,66 @@ const DEMO_USERS = [
   { email: 'officer@suraaksha.gov', password: 'SOC@2024', name: 'Officer Arjun Kumar', role: 'officer', badge: 'SOC-4492' },
   { email: 'admin@suraaksha.gov', password: 'Admin@2024', name: 'Director Priya Shah', role: 'admin', badge: 'ADM-0001' },
 ];
+
+const REGISTERED_ACCOUNTS_KEY = 'suraaksha.registeredAccounts';
+const PASSWORD_HASH_ITERATIONS = 310000;
+
+function loadRegisteredAccounts() {
+  const storedAccounts = window.localStorage.getItem(REGISTERED_ACCOUNTS_KEY);
+  if (!storedAccounts) return [];
+
+  const accounts = JSON.parse(storedAccounts);
+  if (
+    !Array.isArray(accounts) ||
+    accounts.some(account =>
+      !account ||
+      typeof account.email !== 'string' ||
+      typeof account.name !== 'string' ||
+      typeof account.role !== 'string' ||
+      typeof account.badge !== 'string' ||
+      typeof account.passwordSalt !== 'string' ||
+      typeof account.passwordHash !== 'string'
+    )
+  ) {
+    throw new Error('Saved account data is invalid.');
+  }
+
+  return accounts;
+}
+
+function toBase64(bytes) {
+  return window.btoa(String.fromCharCode(...bytes));
+}
+
+function fromBase64(value) {
+  return Uint8Array.from(window.atob(value), character => character.charCodeAt(0));
+}
+
+async function hashPassword(password, salt) {
+  if (!window.crypto.subtle) {
+    throw new Error('Secure account creation requires HTTPS or localhost.');
+  }
+
+  const key = await window.crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const derivedBits = await window.crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations: PASSWORD_HASH_ITERATIONS,
+      hash: 'SHA-256',
+    },
+    key,
+    256
+  );
+
+  return toBase64(new Uint8Array(derivedBits));
+}
 
 export default function AuthPage({ onAuthSuccess }) {
   const [activeTab, setActiveTab] = useState('signin'); // 'signin' | 'signup'
@@ -78,21 +137,43 @@ export default function AuthPage({ onAuthSuccess }) {
     if (Object.keys(errs).length) { setFieldErrors(errs); return; }
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
+    try {
+      const normalizedEmail = signInEmail.trim().toLowerCase();
+      const demoUser = DEMO_USERS.find(
+        user => user.email.toLowerCase() === normalizedEmail && user.password === signInPassword
+      );
 
-    const matched = DEMO_USERS.find(
-      u => u.email.toLowerCase() === signInEmail.toLowerCase().trim() && u.password === signInPassword
-    );
+      let authenticatedUser = null;
+      if (demoUser) {
+        const { password, ...user } = demoUser;
+        authenticatedUser = user;
+      } else {
+        const account = loadRegisteredAccounts().find(
+          registeredAccount => registeredAccount.email.toLowerCase() === normalizedEmail
+        );
+        if (
+          account &&
+          await hashPassword(signInPassword, fromBase64(account.passwordSalt)) === account.passwordHash
+        ) {
+          const { passwordHash, passwordSalt, ...user } = account;
+          authenticatedUser = user;
+        }
+      }
 
-    if (matched) {
-      setSuccess(`Welcome back, ${matched.name}! Redirecting to SOC dashboard...`);
-      setTimeout(() => {
-        if (onAuthSuccess) onAuthSuccess(matched);
-      }, 1200);
-    } else {
-      setError('Invalid credentials. Use the demo credentials below or contact your system administrator.');
+      if (authenticatedUser) {
+        setSuccess(`Welcome back, ${authenticatedUser.name}! Redirecting to SOC dashboard...`);
+        setTimeout(() => {
+          if (onAuthSuccess) onAuthSuccess(authenticatedUser);
+        }, 500);
+      } else {
+        setError('Invalid email or password. Check your credentials and try again.');
+      }
+    } catch (authError) {
+      console.error('Sign-in failed:', authError);
+      setError(authError.message || 'Unable to sign in. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   /* ─── Sign Up ─── */
@@ -113,9 +194,54 @@ export default function AuthPage({ onAuthSuccess }) {
     if (Object.keys(errs).length) { setFieldErrors(errs); return; }
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setSuccess('Account request submitted! Your administrator will activate your access within 24 hours.');
-    setLoading(false);
+    try {
+      const normalizedEmail = signUpEmail.trim().toLowerCase();
+      const normalizedBadge = signUpBadge.trim().toLowerCase();
+      const accounts = loadRegisteredAccounts();
+      const emailExists = accounts.some(account => account.email.toLowerCase() === normalizedEmail) ||
+        DEMO_USERS.some(user => user.email.toLowerCase() === normalizedEmail);
+      const badgeExists = accounts.some(account => account.badge.toLowerCase() === normalizedBadge) ||
+        DEMO_USERS.some(user => user.badge.toLowerCase() === normalizedBadge);
+
+      if (emailExists) {
+        setError('An account with this email already exists. Sign in or use a different email.');
+        return;
+      }
+      if (badgeExists) {
+        setError('An account with this badge / ID already exists. Use a different badge / ID.');
+        return;
+      }
+
+      const salt = window.crypto.getRandomValues(new Uint8Array(16));
+      const passwordHash = await hashPassword(signUpPassword, salt);
+      const user = {
+        name: signUpName.trim(),
+        email: normalizedEmail,
+        role: signUpRole,
+        badge: signUpBadge.trim(),
+      };
+
+      window.localStorage.setItem(
+        REGISTERED_ACCOUNTS_KEY,
+        JSON.stringify([
+          ...accounts,
+          {
+            ...user,
+            passwordSalt: toBase64(salt),
+            passwordHash,
+          },
+        ])
+      );
+      setSuccess(`Account created successfully. Signing in as ${user.name}...`);
+      setTimeout(() => {
+        if (onAuthSuccess) onAuthSuccess(user);
+      }, 500);
+    } catch (registrationError) {
+      console.error('Account creation failed:', registrationError);
+      setError(registrationError.message || 'Unable to create your account. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -195,12 +321,12 @@ export default function AuthPage({ onAuthSuccess }) {
       <div className={styles.rightPanel}>
         <div className={styles.formHeader}>
           <div className={styles.formTitle}>
-            {activeTab === 'signin' ? 'Officer Sign In' : 'Request Access'}
+            {activeTab === 'signin' ? 'Officer Sign In' : 'Create Account'}
           </div>
           <div className={styles.formSubtitle}>
             {activeTab === 'signin'
               ? 'Authenticate to access the SURAAKSHA SOC platform'
-              : 'Submit a request to join your organisation\'s SOC team'}
+              : 'Create an account in this browser and sign in to the SOC demo'}
           </div>
         </div>
 
@@ -490,7 +616,7 @@ export default function AuthPage({ onAuthSuccess }) {
               {loading ? (
                 <><div className={styles.spinner} /><span>Submitting Request...</span></>
               ) : (
-                <><User size={15} /><span>Submit Access Request</span></>
+                <><User size={15} /><span>Create Account</span></>
               )}
             </button>
           </form>

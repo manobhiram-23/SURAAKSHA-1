@@ -92,6 +92,10 @@ npm run start
 | PATCH | `/api/alerts/:id` | Update decision / notes / status |
 | POST | `/api/alerts/:id/report` | Submit officer report |
 
+## Demo sign-in and account creation
+
+The sign-in screen supports the built-in demo credentials and account creation in the current browser. New accounts are stored in that browser's local storage with PBKDF2 password hashes, and the signed-in demo session lasts for the current browser tab session. Accounts are not shared across browsers or devices and are not backed by a server or database. This client-side demo authentication is not suitable for production; use a server-side identity provider and persistent account store before deploying for real users.
+
 ### Example: Submit a report
 
 ```bash
