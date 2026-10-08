@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import '@/styles/globals.css';
 import AuthPage from '@/AuthPage';
 
-const AUTH_SESSION_KEY = 'suraaksha.demoUser';
+const AUTH_SESSION_KEY = 'suraaksha.authenticatedUser';
 
 export default function App({ Component, pageProps }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -13,7 +13,7 @@ export default function App({ Component, pageProps }) {
     try {
       window.sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(user));
     } catch (error) {
-      console.error('Unable to save the demo sign-in session:', error);
+      console.error('Unable to save the sign-in session:', error);
     }
   };
 
@@ -22,7 +22,7 @@ export default function App({ Component, pageProps }) {
     try {
       window.sessionStorage.removeItem(AUTH_SESSION_KEY);
     } catch (error) {
-      console.error('Unable to clear the demo sign-in session:', error);
+      console.error('Unable to clear the sign-in session:', error);
     }
   };
 
@@ -44,11 +44,11 @@ export default function App({ Component, pageProps }) {
         }
       }
     } catch (error) {
-      console.error('Unable to restore the demo sign-in session:', error);
+      console.error('Unable to restore the sign-in session:', error);
       try {
         window.sessionStorage.removeItem(AUTH_SESSION_KEY);
       } catch (removeError) {
-        console.error('Unable to clear the invalid demo sign-in session:', removeError);
+        console.error('Unable to clear the invalid sign-in session:', removeError);
       }
     } finally {
       setAuthReady(true);

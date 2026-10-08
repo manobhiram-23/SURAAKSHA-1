@@ -18,12 +18,6 @@ import {
   Lock as LockIcon
 } from 'lucide-react';
 
-// Demo credentials
-const DEMO_USERS = [
-  { email: 'officer@suraaksha.gov', password: 'SOC@2024', name: 'Officer Arjun Kumar', role: 'officer', badge: 'SOC-4492' },
-  { email: 'admin@suraaksha.gov', password: 'Admin@2024', name: 'Director Priya Shah', role: 'admin', badge: 'ADM-0001' },
-];
-
 const REGISTERED_ACCOUNTS_KEY = 'suraaksha.registeredAccounts';
 const PASSWORD_HASH_ITERATIONS = 310000;
 
@@ -120,13 +114,6 @@ export default function AuthPage({ onAuthSuccess }) {
     clearState();
   };
 
-  const fillDemoCredentials = () => {
-    const demo = DEMO_USERS[0];
-    setSignInEmail(demo.email);
-    setSignInPassword(demo.password);
-    clearState();
-  };
-
   /* ─── Sign In ─── */
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -139,25 +126,17 @@ export default function AuthPage({ onAuthSuccess }) {
     setLoading(true);
     try {
       const normalizedEmail = signInEmail.trim().toLowerCase();
-      const demoUser = DEMO_USERS.find(
-        user => user.email.toLowerCase() === normalizedEmail && user.password === signInPassword
+      const account = loadRegisteredAccounts().find(
+        registeredAccount => registeredAccount.email.toLowerCase() === normalizedEmail
       );
 
       let authenticatedUser = null;
-      if (demoUser) {
-        const { password, ...user } = demoUser;
+      if (
+        account &&
+        await hashPassword(signInPassword, fromBase64(account.passwordSalt)) === account.passwordHash
+      ) {
+        const { passwordHash, passwordSalt, ...user } = account;
         authenticatedUser = user;
-      } else {
-        const account = loadRegisteredAccounts().find(
-          registeredAccount => registeredAccount.email.toLowerCase() === normalizedEmail
-        );
-        if (
-          account &&
-          await hashPassword(signInPassword, fromBase64(account.passwordSalt)) === account.passwordHash
-        ) {
-          const { passwordHash, passwordSalt, ...user } = account;
-          authenticatedUser = user;
-        }
       }
 
       if (authenticatedUser) {
@@ -198,10 +177,8 @@ export default function AuthPage({ onAuthSuccess }) {
       const normalizedEmail = signUpEmail.trim().toLowerCase();
       const normalizedBadge = signUpBadge.trim().toLowerCase();
       const accounts = loadRegisteredAccounts();
-      const emailExists = accounts.some(account => account.email.toLowerCase() === normalizedEmail) ||
-        DEMO_USERS.some(user => user.email.toLowerCase() === normalizedEmail);
-      const badgeExists = accounts.some(account => account.badge.toLowerCase() === normalizedBadge) ||
-        DEMO_USERS.some(user => user.badge.toLowerCase() === normalizedBadge);
+      const emailExists = accounts.some(account => account.email.toLowerCase() === normalizedEmail);
+      const badgeExists = accounts.some(account => account.badge.toLowerCase() === normalizedBadge);
 
       if (emailExists) {
         setError('An account with this email already exists. Sign in or use a different email.');
@@ -232,10 +209,10 @@ export default function AuthPage({ onAuthSuccess }) {
           },
         ])
       );
-      setSuccess(`Account created successfully. Signing in as ${user.name}...`);
-      setTimeout(() => {
-        if (onAuthSuccess) onAuthSuccess(user);
-      }, 500);
+      setSignInEmail(user.email);
+      setSignInPassword('');
+      setActiveTab('signin');
+      setSuccess('Account created successfully. Sign in with your new email and password.');
     } catch (registrationError) {
       console.error('Account creation failed:', registrationError);
       setError(registrationError.message || 'Unable to create your account. Please try again.');
@@ -326,7 +303,7 @@ export default function AuthPage({ onAuthSuccess }) {
           <div className={styles.formSubtitle}>
             {activeTab === 'signin'
               ? 'Authenticate to access the SURAAKSHA SOC platform'
-              : 'Create an account in this browser and sign in to the SOC demo'}
+              : 'Create your account and choose the credentials you will use to sign in'}
           </div>
         </div>
 
@@ -371,7 +348,7 @@ export default function AuthPage({ onAuthSuccess }) {
                   id="signin-email"
                   type="email"
                   className={`${styles.formInput} ${fieldErrors.signInEmail ? styles.inputError : ''}`}
-                  placeholder="officer@suraaksha.gov"
+                  placeholder="you@organisation.gov"
                   value={signInEmail}
                   onChange={e => setSignInEmail(e.target.value)}
                   autoComplete="email"
@@ -417,25 +394,6 @@ export default function AuthPage({ onAuthSuccess }) {
               )}
             </button>
 
-            {/* Demo credentials */}
-            <div className={styles.demoCredentials}>
-              <div className={styles.demoTitle}>🔑 Demo Access Credentials</div>
-              <div className={styles.demoRow}>
-                <span className={styles.demoLabel}>Email</span>
-                <span className={styles.demoValue}>officer@suraaksha.gov</span>
-              </div>
-              <div className={styles.demoRow}>
-                <span className={styles.demoLabel}>Password</span>
-                <span className={styles.demoValue}>SOC@2024</span>
-              </div>
-              <button
-                type="button"
-                className={styles.demoFillBtn}
-                onClick={fillDemoCredentials}
-              >
-                ↗ Auto-fill demo credentials
-              </button>
-            </div>
           </form>
         )}
 
