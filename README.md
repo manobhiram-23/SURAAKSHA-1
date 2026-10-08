@@ -70,7 +70,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-or-publishable-key
 ```
 
-Run [`schema.sql`](./schema.sql) once in the Supabase SQL Editor. It creates the `officers` profile table and a trigger that adds a profile when Supabase Auth creates an account. Configure Supabase email/SMTP settings if email confirmation is enabled. When Supabase is configured, failed or rate-limited sign-ups are reported as errors; the app will not create a local-only account as a fallback.
+Run [`supabase-users.sql`](./supabase-users.sql) in the Supabase SQL Editor to create the `officers` profile table, add a trigger for new Auth accounts, and backfill profiles for users who registered before the trigger was installed. This migration is safe to rerun and does not reinsert the sample alerts from [`schema.sql`](./schema.sql). In the Supabase dashboard, Auth accounts are listed under **Authentication → Users**; officer profile records are under **Table Editor → officers**. Configure Supabase email/SMTP settings if email confirmation is enabled. When Supabase is configured, failed or rate-limited sign-ups are reported as errors; the app will not create a local-only account as a fallback.
 
 ### 3. Run the development server
 

@@ -124,6 +124,24 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- Backfill profiles for Supabase Auth users who signed up before the trigger existed
+INSERT INTO public.officers (id, email, name, badge, role, phone)
+SELECT
+    users.id,
+    users.email,
+    COALESCE(users.raw_user_meta_data->>'name', split_part(users.email, '@', 1)),
+    COALESCE(users.raw_user_meta_data->>'badge', 'SOC-' || substring(users.id::text from 1 for 4)),
+    COALESCE(users.raw_user_meta_data->>'role', 'officer'),
+    users.raw_user_meta_data->>'phone'
+FROM auth.users AS users
+WHERE users.email IS NOT NULL
+ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    name = EXCLUDED.name,
+    badge = EXCLUDED.badge,
+    role = EXCLUDED.role,
+    phone = EXCLUDED.phone;
+
 -- 4. Initial Threat Intelligence Alerts
 INSERT INTO public.alerts (account, platform, type, severity, reason, status, reported_by, evidence, account_profile, decision, notes, reviewed_at, reviewed_by)
 VALUES
