@@ -14,7 +14,9 @@ import {
   Send,
   Printer,
   History,
-  Info
+  Info,
+  CheckCircle,
+  Edit3
 } from 'lucide-react';
 
 export default function AlertDetail({
@@ -205,11 +207,14 @@ export default function AlertDetail({
         {/* Existing Review Info if already reviewed */}
         {alert.status !== 'open' && (
           <div className={styles.reviewedNotice}>
-            <History size={16} />
+            <CheckCircle size={18} className={styles.reviewedNoticeIcon} />
             <div>
-              <strong>Case logged as {alert.status.toUpperCase()}</strong>
-              {alert.reviewedBy && <span> by {alert.reviewedBy}</span>}
-              {alert.reviewedAt && <span> on {new Date(alert.reviewedAt).toLocaleString()}</span>}
+              <div className={styles.reviewedNoticeTitle}>Report Filed & Case Closed ({alert.status.toUpperCase()})</div>
+              <div className={styles.reviewedNoticeDetails}>
+                Determination: <strong>{alert.decision ? alert.decision.toUpperCase() : alert.status.toUpperCase()}</strong>
+                {alert.reviewedBy && <span> • Handled by {alert.reviewedBy}</span>}
+                {alert.reviewedAt && <span> • {new Date(alert.reviewedAt).toLocaleString()}</span>}
+              </div>
             </div>
           </div>
         )}
@@ -218,7 +223,9 @@ export default function AlertDetail({
         <div className={styles.decisionSection}>
           <div className={styles.sectionHeader}>
             <ShieldAlert size={16} className={styles.sectionIcon} />
-            <h4 className={styles.sectionTitle}>Officer Disposition & Enforcement Action</h4>
+            <h4 className={styles.sectionTitle}>
+              {alert.status !== 'open' ? 'Update Incident Determination / Re-report' : 'Officer Disposition & Enforcement Action'}
+            </h4>
           </div>
 
           <div className={styles.decisionButtonsGrid}>
@@ -260,7 +267,7 @@ export default function AlertDetail({
           </div>
 
           <div className={styles.notesContainer}>
-            <label className={styles.notesLabel}>Officer Incident Log / Justification</label>
+            <label className={styles.notesLabel}>Officer Incident Log / Rationale</label>
             <textarea
               className={styles.notesTextarea}
               placeholder="Record investigative steps, domain whois findings, C2 addresses, or rationale before submitting..."
@@ -271,7 +278,7 @@ export default function AlertDetail({
 
           <button
             type="button"
-            className={styles.submitBtn}
+            className={`${styles.submitBtn} ${alert.status !== 'open' && !submitted ? styles.submitBtnUpdate : ''}`}
             disabled={!alert.decision || submitted}
             onClick={() => onSubmit(alert.id)}
           >
@@ -279,6 +286,11 @@ export default function AlertDetail({
               <>
                 <FileCheck size={16} />
                 <span>Verdict Logged to Database</span>
+              </>
+            ) : alert.status !== 'open' ? (
+              <>
+                <Edit3 size={16} />
+                <span>Update / Resubmit Report</span>
               </>
             ) : (
               <>

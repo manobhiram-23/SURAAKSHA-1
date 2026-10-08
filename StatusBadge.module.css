@@ -26,3 +26,9 @@
   color: var(--severity-critical);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
+
+.statusInvestigating {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--severity-medium);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}

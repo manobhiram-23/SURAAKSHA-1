@@ -64,7 +64,12 @@ export default function Dashboard() {
   // Derived filtered alerts
   const filteredAlerts = useMemo(() => {
     return alerts.filter(alert => {
-      // Tab check
+      // Tab check: Active Threat Feed shows open alerts awaiting officer triage
+      if (activeTab === 'alerts' && alert.status !== 'open') {
+        return false;
+      }
+
+      // Case Reviews tab shows resolved/escalated/investigating cases
       if (activeTab === 'reviews' && alert.status === 'open') {
         return false;
       }
@@ -113,8 +118,9 @@ export default function Dashboard() {
   const selectedAlert = alerts.find(a => a.id === selectedAlertId);
 
   // Counts
+  const openCount = alerts.filter(a => a.status === 'open').length;
   const criticalCount = alerts.filter(a => a.severity >= 8 && a.status === 'open').length;
-  const reviewedCount = alerts.filter(a => a.status === 'reviewed' || a.status === 'escalated').length;
+  const reviewedCount = alerts.filter(a => a.status !== 'open').length;
 
   const showToast = (message) => {
     setToast(message);
@@ -232,7 +238,7 @@ export default function Dashboard() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onOpenNewCaseModal={() => setIsModalOpen(true)}
-        totalAlerts={alerts.length}
+        totalAlerts={openCount}
         reviewedCount={reviewedCount}
       />
 

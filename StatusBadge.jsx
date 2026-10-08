@@ -4,7 +4,8 @@ export default function StatusBadge({ status }) {
   const statusMap = {
     open: { class: 'statusOpen', label: 'Open' },
     reviewed: { class: 'statusReviewed', label: 'Reviewed' },
-    escalated: { class: 'statusEscalated', label: 'Escalated' }
+    escalated: { class: 'statusEscalated', label: 'Escalated' },
+    investigating: { class: 'statusInvestigating', label: 'Investigating' }
   };
   
   const s = statusMap[status] || statusMap.open;

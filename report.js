@@ -20,10 +20,17 @@ export default function handler(req, res) {
     return res.status(400).json({ message: 'Decision is required' });
   }
 
+  const statusMap = {
+    confirm: 'reviewed',
+    dismiss: 'reviewed',
+    escalate: 'escalated',
+    investigate: 'investigating'
+  };
+
   const updated = updateAlert(alertId, {
     decision,
     notes: notes !== undefined ? notes : alert.notes,
-    status: decision === 'dismiss' ? 'reviewed' : decision === 'escalate' ? 'escalated' : 'reviewed',
+    status: statusMap[decision] || 'reviewed',
     reviewedAt: new Date().toISOString(),
     reviewedBy: officerId || 'Senior Cyber Officer #4492'
   });
