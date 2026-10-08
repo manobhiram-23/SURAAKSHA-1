@@ -12,9 +12,7 @@ CREATE TABLE IF NOT EXISTS public.alerts (
     severity INTEGER NOT NULL CHECK (severity BETWEEN 1 AND 10),
     reason TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'open',
-    reported_by TEXT NOT NULL DEFAULT '1 officer',3
-    3
-    
+    reported_by TEXT NOT NULL DEFAULT '1 officer',
     evidence JSONB DEFAULT '{}'::jsonb,
     account_profile JSONB DEFAULT '{}'::jsonb,
     decision TEXT,
@@ -220,4 +218,3 @@ VALUES
     NULL
 )
 ON CONFLICT DO NOTHING;
-

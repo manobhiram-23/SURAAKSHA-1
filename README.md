@@ -61,12 +61,16 @@ yarn install
 pnpm install
 ```
 
-### 2. Set up environment variables
+### 2. Configure Supabase
+
+Add your Supabase project URL and anon or publishable key to `.env.local`:
 
 ```bash
-cp .env.local .env.local
-# Edit .env.local with your values
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-or-publishable-key
 ```
+
+Run [`schema.sql`](./schema.sql) once in the Supabase SQL Editor. It creates the `officers` profile table and a trigger that adds a profile when Supabase Auth creates an account. Configure Supabase email/SMTP settings if email confirmation is enabled. When Supabase is configured, failed or rate-limited sign-ups are reported as errors; the app will not create a local-only account as a fallback.
 
 ### 3. Run the development server
 
@@ -103,7 +107,7 @@ Create an account with your own email and password, then sign in with those cred
 | SOC Officer | `officer@suraaksha.gov` | `SOC@2024` |
 | Admin | `admin@suraaksha.gov` | `Admin@2024` |
 
-New accounts are stored in that browser's local storage with PBKDF2 password hashes, and the signed-in session lasts for the current browser tab session. Accounts are not shared across browsers or devices and are not backed by a server or database. This client-side authentication is not suitable for production; use a server-side identity provider and persistent account store before deploying for real users.
+When Supabase is configured, new accounts are created with Supabase Auth and their officer profiles are created in `public.officers` by the database trigger in [`schema.sql`](./schema.sql). If Supabase is not configured, the app uses browser-local demo accounts instead. Local accounts are not shared across browsers or devices. Built-in demo sign-ins are for demonstration only; configure a server-side identity provider and production-grade account policies before deploying for real users.
 
 ### Example: Submit a report
 
