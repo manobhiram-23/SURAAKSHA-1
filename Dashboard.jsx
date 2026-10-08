@@ -18,7 +18,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-export default function Dashboard() {
+export default function Dashboard({ currentUser, onSignOut }) {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAlertId, setSelectedAlertId] = useState(null);
@@ -307,6 +307,31 @@ export default function Dashboard() {
               <Plus size={14} />
               <span>Flag Account</span>
             </button>
+
+            {/* User badge + sign out */}
+            {currentUser && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: '4px', paddingLeft: '12px', borderLeft: '1px solid var(--border)' }}>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>{currentUser.name}</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{currentUser.badge} · {currentUser.role}</div>
+                </div>
+                <button
+                  onClick={onSignOut}
+                  title="Sign Out"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    padding: '7px 12px', background: 'rgba(239,68,68,0.08)',
+                    border: '1px solid rgba(239,68,68,0.2)', borderRadius: '7px',
+                    color: '#fca5a5', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.16)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+                >
+                  ⏻ Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
