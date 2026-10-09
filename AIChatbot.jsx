@@ -20,10 +20,10 @@ const INITIAL_MESSAGE = {
 };
 
 const SUGGESTED_QUERIES = [
+  "💡 How can you help us?",
   "🚨 Show critical threats",
   "🔍 Analyze selected alert",
   "📋 How to escalate to LEA?",
-  "🤖 Detect botnet behavior",
   "🔬 Deepfake detection steps"
 ];
 

@@ -174,9 +174,41 @@ function generateSOCAnalystResponse(query, alerts, activeAlert) {
       `- **Action:** Bulk flag associated handles in SURAAKSHA for cluster-level monitoring.`;
   }
 
-  // Greetings
-  if (/^(hi|hello|hey|namaste|greetings|good\s*(morning|afternoon|evening))\b/i.test(query.trim())) {
-    return `👋 **Greetings Officer.**\n\nI am **SURAAKSHA Copilot**, dedicated exclusively to Cyber Threat Intelligence, SOC Operations, and Incident Triage.\n\nYou can ask me to:\n- 🚨 Summarize critical / high-priority threats\n- 🔍 Analyze a specific case or active alert\n- 📋 Guide escalation to LEA / CERT-In\n- 🔬 Assist with deepfakes, botnets, and disinformation triage\n\nHow can I support your investigation?`;
+  // 1. Identity & Help Queries: "how can you help us/me", "who are you", "who are we", "what can you do"
+  const isHelpQuery = 
+    lower.includes('how can you help') ||
+    lower.includes('how do you help') ||
+    lower.includes('what can you do') ||
+    lower.includes('help me') ||
+    lower.includes('help us') ||
+    lower.includes('who are you') ||
+    lower.includes('who are we') ||
+    lower.includes('what are you') ||
+    lower.includes('about you') ||
+    lower.includes('your purpose');
+
+  if (isHelpQuery) {
+    return `🛡️ **I am SURAAKSHA AI** — your specialized Cyber Threat Intelligence and SOC Copilot!\n\n` +
+      `**How I assist you in investigating & managing cases:**\n` +
+      `• 🔍 **Case Assistance & Triage:** Analyze social media threats, assess threat severity scores (1-10), and evaluate flagged accounts.\n` +
+      `• 📂 **Dossier & Evidence Review:** Inspect posts, telemetry, timestamps, and suspicious activity patterns across platforms.\n` +
+      `• 🚨 **Critical Alert Feeds:** Instantly surface high-priority hazards requiring immediate officer intervention.\n` +
+      `• ⚖️ **Law Enforcement (LEA) Escalation:** Guide standard escalation protocols to LEA and CERT-In, helping generate unalterable case dossiers.\n` +
+      `• 🔬 **Digital Forensic Intelligence:** Assist in uncovering Deepfakes, coordinated botnet manipulation, and targeted disinformation.\n\n` +
+      `You can ask me to *"Show critical threats"*, *"Analyze selected alert"*, or ask about any active case!`;
+  }
+
+  // 2. Greetings & Courtesy
+  const isGreeting = /^(hi|hello|hey|namaste|vanakkam|greetings|good\s*(morning|afternoon|evening|day)|sup)\b/i.test(query.trim());
+  if (isGreeting) {
+    return `👋 **Hello Officer! Greetings from SURAAKSHA AI.**\n\n` +
+      `I am here to assist you in investigating and resolving cyber threat cases across the platform.\n\n` +
+      `**Quick actions you can try:**\n` +
+      `- 🚨 *"Show critical threats"* — inspect pending high-severity cases\n` +
+      `- 🔍 *"Analyze selected alert"* — evaluate the case open on your screen\n` +
+      `- 📋 *"How to escalate to LEA"* — view standard escalation workflow\n` +
+      `- 💡 *"How can you help us?"* — discover my case assistance capabilities\n\n` +
+      `How may I assist your investigation today?`;
   }
 
   // Specific handle search or mention (e.g. "@bad_actor" or "account xyz")
