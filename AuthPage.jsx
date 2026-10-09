@@ -375,11 +375,15 @@ export default function AuthPage({ onAuthSuccess }) {
           {/* Logo */}
           <div className={styles.brandLogo}>
             <div className={styles.logoShield}>
-              <ShieldAlert size={30} color="#fff" />
+              <img 
+                src="/logo.png" 
+                alt="SURAAKSHA Logo" 
+                className={styles.brandLogoImg} 
+              />
             </div>
             <div className={styles.logoWordmark}>
               <div className={styles.logoName}>SURAAKSHA</div>
-              <div className={styles.logoTagline}>Cyber Defense SOC Platform</div>
+              <div className={styles.logoTagline}>AI CALLS • SECURE • SMART</div>
             </div>
           </div>
 

@@ -25,7 +25,11 @@ export default function Sidebar({
     <aside className={styles.sidebar}>
       <div className={styles.topBrand}>
         <div className={styles.logoBadge}>
-          <ShieldAlert size={22} className={styles.logoIcon} />
+          <img 
+            src="/logo.png" 
+            alt="SURAAKSHA Logo" 
+            className={styles.logoImage} 
+          />
           <div>
             <div className={styles.logo}>SURAAKSHA</div>
             <div className={styles.logoSub}>Cyber Defense SOC</div>

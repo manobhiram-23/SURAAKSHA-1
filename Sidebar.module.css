@@ -19,7 +19,17 @@
 .logoBadge {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+}
+
+.logoImage {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2px;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
 }
 
 .logoIcon {

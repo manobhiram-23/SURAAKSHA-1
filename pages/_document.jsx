@@ -7,7 +7,7 @@ export default function Document() {
         <meta charSet="UTF-8" />
         <meta name="description" content="SURAAKSHA — Social Media Threat Alert Dashboard for Cybersecurity Officers" />
         <meta name="theme-color" content="#0f1419" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/logo.png" />
       </Head>
       <body>
         <Main />
