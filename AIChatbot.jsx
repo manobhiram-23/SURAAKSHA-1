@@ -16,7 +16,7 @@ const INITIAL_MESSAGE = {
   id: 'init-1',
   sender: 'assistant',
   text: `👋 Greetings Officer. I am **SURAAKSHA Copilot**, your AI Cyber Intelligence Assistant.\n\nI can analyze active threat signals, evaluate account risk, guide LEA escalation procedures, and interpret evidence dossiers. How can I assist your investigation?`,
-  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  timestamp: 'Just now'
 };
 
 const SUGGESTED_QUERIES = [
@@ -28,11 +28,16 @@ const SUGGESTED_QUERIES = [
 ];
 
 export default function AIChatbot({ currentAlertId = null }) {
+  const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -123,6 +128,10 @@ export default function AIChatbot({ currentAlertId = null }) {
       );
     });
   };
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <>
