@@ -174,43 +174,58 @@ function generateSOCAnalystResponse(query, alerts, activeAlert) {
       `- **Action:** Bulk flag associated handles in SURAAKSHA for cluster-level monitoring.`;
   }
 
-  // 1. Website Options & Capabilities: "what are the options available in this website", "what features are there", "what is on this website"
-  const isWebsiteOptionsQuery = 
+  // 1. "what is this website for" / "purpose of this website"
+  const isPurposeQuery = 
+    lower.includes('what is this website for') ||
+    lower.includes('what this website is for') ||
+    lower.includes('why this website') ||
+    lower.includes('purpose of this website') ||
+    lower.includes('what is this site for');
+
+  if (isPurposeQuery) {
+    return `• 🔍 **Case Assistance & Triage:** Analyze social media threats, assess threat severity scores (1-10), and evaluate flagged accounts.\n` +
+      `• 📂 **Dossier & Evidence Review:** Inspect posts, telemetry, timestamps, and suspicious activity patterns across platforms.\n` +
+      `• 🚨 **Critical Alert Feeds:** Instantly surface high-priority hazards requiring immediate officer intervention.\n` +
+      `• ⚖️ **Law Enforcement (LEA) Escalation:** Guide standard escalation protocols to LEA and CERT-In, helping generate unalterable case dossiers.\n` +
+      `• 🔬 **Digital Forensic Intelligence:** Assist in uncovering Deepfakes, coordinated botnets, and disinformation.`;
+  }
+
+  // 2. "explain each one" / "explain options" / "options in this website"
+  const isExplainOptionsQuery = 
+    lower.includes('explain each one') ||
+    lower.includes('explain each') ||
+    lower.includes('explain all') ||
     lower.includes('options') ||
     lower.includes('feature') ||
     lower.includes('features') ||
     lower.includes('what is in this website') ||
     lower.includes('what is on this website') ||
-    lower.includes('what is this website') ||
-    lower.includes('what does this website') ||
     lower.includes('how to use this website') ||
     lower.includes('navigation') ||
     lower.includes('tabs') ||
     lower.includes('tools available') ||
     lower.includes('menu');
 
-  if (isWebsiteOptionsQuery) {
-    return `🌐 **Options & Features Available on SURAAKSHA Cyber Defense SOC Platform:**\n\n` +
-      `**1. 📡 Active Threat Feed (Live Radar)**\n` +
-      `   - Real-time social media threat stream (Twitter/X, Telegram, Instagram, YouTube).\n` +
-      `   - Displays Severity Score (1-10), Threat Class, Flagged Reason, and Account Handle.\n\n` +
-      `**2. 🔍 Case Dossier & Evidence Viewer**\n` +
-      `   - Inspect extracted post payloads, timestamps, platform link, and metadata.\n` +
-      `   - Officer determinations: *Mark Reviewed*, *Escalate to LEA*, or *Dismiss as False Positive*.\n` +
-      `   - Add confidential officer case notes.\n\n` +
-      `**3. 🖨️ Dossier Export & Report Generation**\n` +
-      `   - **"Download / Print Dossier"** button creates an official court/LEA-ready PDF incident file.\n` +
-      `   - **"Export Threat JSON"** downloads raw forensic data.\n\n` +
-      `**4. ➕ Flag New Account Modal**\n` +
-      `   - Manually lodge a new suspect handle, select threat category, assign severity, and upload evidence text.\n\n` +
-      `**5. 📊 Threat Analytics & SOC Settings**\n` +
-      `   - View platform-wide statistics, threat category breakdowns, and configure webhook/alerting rules.\n\n` +
-      `**6. 🤖 SURAAKSHA AI Threat Copilot** *(Floating Widget)*\n` +
-      `   - Real-time AI assistant for instant threat triage, LEA escalation guidance, and forensic advice.\n\n` +
-      `💡 *Try clicking any alert on the left feed or ask me about any specific option!*`;
+  if (isExplainOptionsQuery) {
+    return `1. 📡 **Active Threat Feed (Live Radar)**\n\n` +
+      `Real-time social media threat stream (Twitter/X, Telegram, Instagram, YouTube).\n` +
+      `Displays Severity Score (1-10), Threat Class, Flagged Reason, and Account Handle.\n\n` +
+      `2. 🔍 **Case Dossier & Evidence Viewer**\n\n` +
+      `Inspect extracted post payloads, timestamps, platform link, and metadata.\n` +
+      `Officer determinations: Mark Reviewed, Escalate to LEA, or Dismiss as False Positive.\n` +
+      `Add confidential officer case notes.\n\n` +
+      `3. 🖨️ **Dossier Export & Report Generation**\n\n` +
+      `"Download / Print Dossier" creates an official court/LEA-ready PDF incident file.\n` +
+      `"Export Threat JSON" downloads raw forensic data.\n\n` +
+      `4. ➕ **Flag New Account Modal**\n\n` +
+      `Manually lodge a new suspect handle, select threat category, assign severity, and upload evidence text.\n\n` +
+      `5. 📊 **Threat Analytics & SOC Settings**\n\n` +
+      `View platform-wide statistics, threat category breakdowns, and configure webhook/alerting rules.\n\n` +
+      `6. 🤖 **SURAAKSHA AI Threat Copilot (Floating Widget)**\n\n` +
+      `Real-time AI assistant for instant threat triage, LEA escalation guidance, and forensic advice.`;
   }
 
-  // 2. Identity & Help Queries: "how can you help us/me", "who are you", "who are we", "what can you do"
+  // 3. Identity & Help Queries: "how can you help us/me", "who are you", "who are we", "what can you do"
   const isHelpQuery = 
     lower.includes('how can you help') ||
     lower.includes('how do you help') ||
@@ -231,7 +246,7 @@ function generateSOCAnalystResponse(query, alerts, activeAlert) {
       `• 🚨 **Critical Alert Feeds:** Instantly surface high-priority hazards requiring immediate officer intervention.\n` +
       `• ⚖️ **Law Enforcement (LEA) Escalation:** Guide standard escalation protocols to LEA and CERT-In, helping generate unalterable case dossiers.\n` +
       `• 🔬 **Digital Forensic Intelligence:** Assist in uncovering Deepfakes, coordinated botnet manipulation, and targeted disinformation.\n\n` +
-      `You can ask me to *"Show critical threats"*, *"What are the options in this website?"*, or *"Analyze selected alert"*!`;
+      `You can ask me to *"Show critical threats"*, *"Explain each one"*, or *"What is this website for?"*!`;
   }
 
   // 2. Greetings & Courtesy
