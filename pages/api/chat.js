@@ -174,7 +174,54 @@ function generateSOCAnalystResponse(query, alerts, activeAlert) {
       `- **Action:** Bulk flag associated handles in SURAAKSHA for cluster-level monitoring.`;
   }
 
-  // 1. "what is this website for" / "purpose of this website"
+  // 1. "how to flag a account" / "how to flag an account" / "flag new account"
+  const isFlagAccountQuery = 
+    lower.includes('flag a account') ||
+    lower.includes('flag an account') ||
+    lower.includes('flag account') ||
+    lower.includes('how to flag') ||
+    lower.includes('flag new account') ||
+    lower.includes('report account') ||
+    lower.includes('add threat') ||
+    lower.includes('log new case');
+
+  if (isFlagAccountQuery) {
+    return `🚩 **Steps to Flag a Suspect Social Media Account in SURAAKSHA:**\n\n` +
+      `1. **Click "Flag New Account":** On the left sidebar navigation, click the **"+ Flag New Account"** button.\n` +
+      `2. **Enter Account Handle:** Type the suspect username (e.g. \`@fraud_crypto_bot\`).\n` +
+      `3. **Select Platform:** Choose the social media network (*Twitter / X, Telegram, Instagram, Facebook, or YouTube*).\n` +
+      `4. **Pick Threat Category:** Classify the danger (*Impersonation & Scam, Phishing, Malware, Coordinated Harassment, Misinformation*).\n` +
+      `5. **Set Severity Score:** Drag the slider from **1 to 10** based on public hazard level.\n` +
+      `6. **Provide Flagging Reason:** Describe the specific threat vector or violation.\n` +
+      `7. **Attach Evidence:** Paste the direct post URL and the extracted malicious payload/text.\n` +
+      `8. **Save Case:** Click **"Log Case to Threat Database"** — the case will immediately appear in the live triage feed.`;
+  }
+
+  // 2. "how to create a new account" / "how to sign up" / "register account"
+  const isCreateUserAccountQuery = 
+    lower.includes('create a new account') ||
+    lower.includes('create an account') ||
+    lower.includes('create account') ||
+    lower.includes('how to sign up') ||
+    lower.includes('register account') ||
+    lower.includes('new user registration') ||
+    lower.includes('signup');
+
+  if (isCreateUserAccountQuery) {
+    return `👤 **Steps to Create an Officer Account in SURAAKSHA:**\n\n` +
+      `1. **Go to Auth Screen:** Click **"Sign Out"** at the top right if currently logged in, or open the platform sign-in page.\n` +
+      `2. **Switch to Create Account:** Click the **"Create Account"** tab at the top of the login box (or click *"New to SURAAKSHA? Create an Account →"* at the bottom).\n` +
+      `3. **Fill Officer Details:**\n` +
+      `   - **Full Name:** Enter your official name.\n` +
+      `   - **Official Email:** Use your government or department email (e.g. \`officer@suraaksha.gov\`).\n` +
+      `   - **Official Mobile:** Provide your verified contact number.\n` +
+      `   - **Department / Badge ID:** Enter your SOC badge number (e.g. \`SOC-1044\`).\n` +
+      `4. **Set Password:** Choose a secure password (minimum 8 characters with numbers and special symbols).\n` +
+      `5. **Accept Policy:** Check the agreement for the SOC demo use policy.\n` +
+      `6. **Complete Registration:** Click **"Continue"** — your account is verified and ready for sign-in.`;
+  }
+
+  // 3. "what is this website for" / "purpose of this website"
   const isPurposeQuery = 
     lower.includes('what is this website for') ||
     lower.includes('what this website is for') ||
@@ -190,11 +237,18 @@ function generateSOCAnalystResponse(query, alerts, activeAlert) {
       `• 🔬 **Digital Forensic Intelligence:** Assist in uncovering Deepfakes, coordinated botnets, and disinformation.`;
   }
 
-  // 2. "explain each one" / "explain options" / "options in this website"
+  // 2. "explain each one" / "explain in detail" / "explain options" / "options in this website"
   const isExplainOptionsQuery = 
     lower.includes('explain each one') ||
     lower.includes('explain each') ||
     lower.includes('explain all') ||
+    lower.includes('explain in detail') ||
+    lower.includes('expain in detail') ||
+    lower.includes('explain detail') ||
+    lower.includes('expain detail') ||
+    lower.includes('in detail') ||
+    lower.includes('explain more') ||
+    lower.includes('expain more') ||
     lower.includes('options') ||
     lower.includes('feature') ||
     lower.includes('features') ||
