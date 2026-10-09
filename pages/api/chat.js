@@ -9,7 +9,8 @@ Guidelines:
 - Provide sharp, structured, professional, and actionable cybersecurity advice.
 - When asked about live threats, utilize the provided threat alerts telemetry data.
 - Offer threat severity triage, MITRE ATT&CK / DISARM framework alignment, forensic steps, preservation recommendations, and escalation advice (e.g. reporting to LEA / CERT-In).
-- Support quick queries like "Summarize critical threats", "Explain case #1", "How do I escalate to LEA?", "Recommend investigation steps".
+- IMPORTANT GUARDRAIL: If the user asks a question that is NOT related to cybersecurity, threat intelligence, online safety, forensics, or the SURAAKSHA dashboard (e.g. sports, movies, celebrities like "who is virat kohli", cooking, general trivia, unrelated homework), you MUST refuse and respond:
+"❌ **Invalid Question / Out of Scope**\n\nThis is an invalid question for the SURAAKSHA Cyber Defense Copilot. I only assist with cybersecurity threat monitoring, case triage, LEA escalation, and digital crime investigation. Please ask a cybersecurity or threat-related question."
 - Keep responses concise, clear, and styled with bullet points or bold markers where useful.`;
 
 export default async function handler(req, res) {
@@ -173,15 +174,60 @@ function generateSOCAnalystResponse(query, alerts, activeAlert) {
       `- **Action:** Bulk flag associated handles in SURAAKSHA for cluster-level monitoring.`;
   }
 
-  // 7. General Cyber Threat Assistance fallback
+  // Greetings
+  if (/^(hi|hello|hey|namaste|greetings|good\s*(morning|afternoon|evening))\b/i.test(query.trim())) {
+    return `👋 **Greetings Officer.**\n\nI am **SURAAKSHA Copilot**, dedicated exclusively to Cyber Threat Intelligence, SOC Operations, and Incident Triage.\n\nYou can ask me to:\n- 🚨 Summarize critical / high-priority threats\n- 🔍 Analyze a specific case or active alert\n- 📋 Guide escalation to LEA / CERT-In\n- 🔬 Assist with deepfakes, botnets, and disinformation triage\n\nHow can I support your investigation?`;
+  }
+
+  // Specific handle search or mention (e.g. "@bad_actor" or "account xyz")
+  const matchedAlert = alerts.find(a => 
+    (a.account && lower.includes(a.account.toLowerCase())) ||
+    (a.id && (lower.includes(`case #${a.id}`) || lower.includes(`alert #${a.id}`) || lower.includes(`case ${a.id}`) || lower.includes(`alert ${a.id}`)))
+  );
+  if (matchedAlert) {
+    return `🔍 **Case Dossier: ${matchedAlert.account} (Alert #${matchedAlert.id})**\n\n` +
+      `- **Platform:** ${matchedAlert.platform || 'Social'}\n` +
+      `- **Severity:** **${matchedAlert.severity}/10**\n` +
+      `- **Threat Class:** ${matchedAlert.type}\n` +
+      `- **Reason Flagged:** ${matchedAlert.reason}\n` +
+      `- **Status:** \`${matchedAlert.status.toUpperCase()}\`\n\n` +
+      `💡 Select this case on your dashboard to review extracted evidence and submit an officer determination.`;
+  }
+
+  // Broad Cyber Security & SOC Domain Keywords
+  const CYBER_SOC_KEYWORDS = [
+    'threat', 'threats', 'alert', 'alerts', 'soc', 'cyber', 'security', 'hack', 'hacker',
+    'phish', 'phishing', 'scam', 'fraud', 'malware', 'bot', 'botnet', 'deepfake',
+    'misinformation', 'disinformation', 'troll', 'harassment', 'dox', 'doxxing',
+    'c2pa', 'mitre', 'cert', 'lea', 'police', 'investigation', 'evidence', 'dossier',
+    'case', 'cases', 'triage', 'fir', 'i4c', 'cybercrime', 'surveillance', 'telemetry',
+    'severity', 'priority', 'impersonat', 'compromise', 'incident', 'escalat',
+    'forensic', 'sentiment', 'synthetic', 'account', 'handle', 'post', 'tweet'
+  ];
+
+  const isRelevantToCybersecurity = CYBER_SOC_KEYWORDS.some(kw => lower.includes(kw));
+
+  // If the question is outside cybersecurity/SURAAKSHA platform (e.g., cricket, movies, general trivia)
+  if (!isRelevantToCybersecurity) {
+    return `❌ **Invalid Question / Out of Scope**\n\n` +
+      `This is an invalid question for the **SURAAKSHA Cyber Defense Copilot**.\n\n` +
+      `I am exclusively designed to assist with:\n` +
+      `• **Social media threat monitoring & triage**\n` +
+      `• **Case dossier evaluation & evidence verification**\n` +
+      `• **Law Enforcement (LEA) escalation protocols**\n` +
+      `• **Cyber crime investigation (Deepfakes, Botnets, Scams, Disinformation)**\n\n` +
+      `⚠️ *Please ask a question related to cybersecurity, active cases, or SOC threat feeds.*`;
+  }
+
+  // General Cyber Threat Assistance fallback within scope
   return `🛡️ **SURAAKSHA Threat Analyst AI:**\n\n` +
-    `I have analyzed your query against current SOC intelligence feeds.\n\n` +
+    `I have analyzed your cybersecurity query against current SOC intelligence feeds.\n\n` +
     `• **Active Threat Feed:** ${alerts.length} signals monitored.\n` +
     `• **Quick Capabilities:**\n` +
     `  - Ask *"Show critical threats"* to see active high-severity cases.\n` +
-    `  - Ask *"Analyze current alert"* to evaluate the selected case.\n` +
+    `  - Ask *"Analyze selected alert"* to evaluate the active case.\n` +
     `  - Ask *"How to escalate to LEA"* for official incident escalation protocol.\n` +
-    `  - Ask about forensic techniques (Deepfakes, Botnets, Disinformation campaigns).\n\n` +
+    `  - Ask about forensic techniques (Deepfakes, Botnets, Disinformation).\n\n` +
     `How would you like to proceed with the investigation, Officer?`;
 }
 
