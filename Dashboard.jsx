@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Sidebar from '@/components/Sidebar';
 import AlertsList from '@/components/AlertsList';
 import AlertDetail from '@/components/AlertDetail';
+import AIChatbot from '@/components/AIChatbot';
 import styles from '@/components/Dashboard.module.css';
 import { 
   Search, 
@@ -641,6 +642,9 @@ export default function Dashboard({ currentUser, onSignOut }) {
           <span>{toast}</span>
         </div>
       )}
+
+      {/* AI Threat Copilot Chatbot */}
+      <AIChatbot currentAlertId={selectedAlertId} />
     </div>
   );
 }

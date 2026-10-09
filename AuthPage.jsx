@@ -127,6 +127,37 @@ export default function AuthPage({ onAuthSuccess }) {
     setFieldErrors({});
   };
 
+  // Detect confirmation success or token error from URL hash (e.g. Supabase redirect)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const hash = window.location.hash;
+      if (hash) {
+        const params = new URLSearchParams(hash.replace(/^#/, ''));
+        const errorDesc = params.get('error_description');
+        const errorCode = params.get('error_code');
+        const errorType = params.get('error');
+
+        if (errorDesc || errorCode) {
+          if (errorCode === 'otp_expired') {
+            setError(
+              'The confirmation link has expired or was already used. If your account was already verified, please sign in below with your password.'
+            );
+          } else {
+            setError(errorDesc?.replace(/\+/g, ' ') || 'Authentication link error.');
+          }
+          // Clean the hash so it doesn't linger
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        } else if (params.get('access_token')) {
+          setSuccess('Email confirmed successfully! Signing you in...');
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading URL hash:', e);
+    }
+  }, []);
+
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
     setShowPasswordHelp(false);

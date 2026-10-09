@@ -35,6 +35,7 @@ export default function App({ Component, pageProps }) {
   };
 
   useEffect(() => {
+    // 1. Check for stored session in sessionStorage
     try {
       const storedUser = window.sessionStorage.getItem(AUTH_SESSION_KEY);
       if (storedUser) {
@@ -58,9 +59,49 @@ export default function App({ Component, pageProps }) {
       } catch (removeError) {
         console.error('Unable to clear the invalid sign-in session:', removeError);
       }
-    } finally {
-      setAuthReady(true);
     }
+
+    // 2. Listen for Supabase Auth changes (such as email confirmation or token exchange)
+    let authSubscription = null;
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          const u = session.user;
+          const userObj = {
+            name: u.user_metadata?.name || u.email.split('@')[0],
+            email: u.email,
+            role: u.user_metadata?.role || 'officer',
+            badge: u.user_metadata?.badge || 'SOC-' + u.id.slice(0, 4).toUpperCase(),
+          };
+          handleAuthSuccess(userObj);
+        }
+      });
+
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const u = session.user;
+          const userObj = {
+            name: u.user_metadata?.name || u.email.split('@')[0],
+            email: u.email,
+            role: u.user_metadata?.role || 'officer',
+            badge: u.user_metadata?.badge || 'SOC-' + u.id.slice(0, 4).toUpperCase(),
+          };
+          handleAuthSuccess(userObj);
+        } else if (event === 'SIGNED_OUT') {
+          setCurrentUser(null);
+          try {
+            window.sessionStorage.removeItem(AUTH_SESSION_KEY);
+          } catch (_) {}
+        }
+      });
+      authSubscription = data?.subscription;
+    }
+
+    setAuthReady(true);
+
+    return () => {
+      if (authSubscription) authSubscription.unsubscribe();
+    };
   }, []);
 
   if (!authReady) {

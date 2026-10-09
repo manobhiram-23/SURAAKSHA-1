@@ -124,11 +124,13 @@ export async function supabaseSignIn(email, password) {
  */
 export async function supabaseSignUp(email, password, metadata = {}) {
   if (!supabase) return { data: null, error: new Error('Supabase not configured') };
+  const emailRedirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
   return await supabase.auth.signUp({
     email,
     password,
     options: {
       data: metadata,
+      emailRedirectTo,
     },
   });
 }
