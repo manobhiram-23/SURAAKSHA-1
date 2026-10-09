@@ -20,11 +20,11 @@ const INITIAL_MESSAGE = {
 };
 
 const SUGGESTED_QUERIES = [
+  "🌐 Options in this website",
   "💡 How can you help us?",
   "🚨 Show critical threats",
   "🔍 Analyze selected alert",
-  "📋 How to escalate to LEA?",
-  "🔬 Deepfake detection steps"
+  "📋 How to escalate to LEA?"
 ];
 
 export default function AIChatbot({ currentAlertId = null }) {
